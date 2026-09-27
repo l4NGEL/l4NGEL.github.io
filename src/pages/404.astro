@@ -1,10 +1,15 @@
 ---
 import Base from '../layouts/Base.astro';
 ---
-<Base title="Sayfa bulunamadı — Beyza Nur Kılıç" description="Aradığınız sayfa bulunamadı.">
-  <main class="wrap narrow" style="padding:80px 20px">
-    <h1><span class="bracket">404</span></h1>
-    <p class="tagline">Bu sayfa yok ya da taşındı.</p>
-    <p><a href="/" style="color:var(--accent)">← Tüm projelere dön</a></p>
+<Base title="Sayfa bulunamadı · Beyza Nur Kılıç" description="Aradığınız sayfa bulunamadı.">
+  <main class="wrap">
+    <header class="p-top">
+      <p class="crumb">Hata 404</p>
+      <h1 class="p-title">Burada bir şey yok</h1>
+      <div class="p-lead">
+        <p class="lead">Bu sayfa taşınmış ya da hiç var olmamış olabilir.</p>
+        <p><a class="readmore" href="/">Çalışmalara dön</a></p>
+      </div>
+    </header>
   </main>
 </Base>

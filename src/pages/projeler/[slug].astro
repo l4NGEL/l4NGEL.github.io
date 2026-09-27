@@ -1,79 +1,91 @@
 ---
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import Figure from '../../components/Figure.astro';
+import Metrics from '../../components/Metrics.astro';
+import Table from '../../components/Table.astro';
 import { CATEGORIES } from '../../categories';
 
 export async function getStaticPaths() {
   const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
   return projects.map((project, i) => ({
     params: { slug: project.id },
-    props: { project, prev: projects[i - 1], next: projects[i + 1] },
+    props: { project, next: projects[(i + 1) % projects.length], total: projects.length },
   }));
 }
 
 interface Props {
   project: CollectionEntry<'projects'>;
-  prev?: CollectionEntry<'projects'>;
-  next?: CollectionEntry<'projects'>;
+  next: CollectionEntry<'projects'>;
+  total: number;
 }
 
-const { project, prev, next } = Astro.props;
-const p = project.data;
-const { Content } = await render(project);
+const { project, next, total } = Astro.props;
+const d = project.data;
+const { Content, headings } = await render(project);
+const toc = headings.filter((h) => h.depth === 2);
+const pad = (n: number) => String(n).padStart(2, '0');
 ---
-<Base title={`${p.title} — Beyza Nur Kılıç`} description={p.tagline} image={p.cover?.src}>
-  <main class="wrap narrow">
-    <p class="crumb"><a href="/">← Tüm projeler</a></p>
-
-    <header class="p-head">
-      <h1>
-        <span class="bracket">{p.title}</span>
-        {p.status && <span class="status" style="vertical-align:middle;margin-left:8px">{p.status}</span>}
-      </h1>
-      <p class="tagline">{p.tagline}</p>
-      <dl class="p-facts">
-        <div><dt>Dönem</dt><dd>{p.period}</dd></div>
-        <div><dt>Alan</dt><dd>{p.categories.map((c) => CATEGORIES[c]).join(', ')}</dd></div>
+<Base title={`${d.title} · Beyza Nur Kılıç`} description={d.tagline} image={d.cover?.src}>
+  <main class="wrap">
+    <header class="p-top">
+      <p class="crumb"><a href="/">Çalışmalar</a> / {pad(d.order)} / {pad(total)}</p>
+      <h1 class="p-title">{d.title}</h1>
+      <div class="p-lead">
         <div>
-          <dt>Kod</dt>
-          <dd>{p.repo ? <a href={p.repo} rel="noopener">GitHub →</a> : 'Talep üzerine paylaşılır'}</dd>
+          {d.status && <span class="status">{d.status}</span>}
+          <p class="lead">{d.summary}</p>
         </div>
-      </dl>
-      <div class="stack">{p.stack.map((s) => <span>{s}</span>)}</div>
+        <dl class="facts">
+          <dt>Dönem</dt><dd>{d.period}</dd>
+          <dt>Alan</dt><dd>{d.categories.map((c) => CATEGORIES[c]).join(', ')}</dd>
+          <dt>Rol</dt><dd>Tek kişilik proje: tasarım, kod, test, değerlendirme</dd>
+          <dt>Teknoloji</dt><dd>{d.stack.join(', ')}</dd>
+          <dt>Kod</dt><dd>{d.repo ? <a href={d.repo} rel="noopener">{d.repo.replace('https://', '')}</a> : 'Talep üzerine paylaşılır'}</dd>
+        </dl>
+      </div>
+      <Metrics items={d.metrics} class="p-metrics" />
     </header>
 
-    {p.cover && (
-      <figure class="p-cover">
-        <img src={p.cover.src} alt={p.cover.alt} />
-        <figcaption>{p.cover.alt}</figcaption>
-      </figure>
+    {d.cover && (
+      <div class="p-cover">
+        <Figure n={1} src={d.cover.src} alt={d.cover.alt} caption={d.cover.alt} bare />
+      </div>
     )}
 
-    <div class="p-highlights">
-      <ul class="ticks">{p.highlights.map((h) => <li set:html={h} />)}</ul>
+    <div class="p-body">
+      {toc.length > 1 && (
+        <nav class="toc" aria-label="Bu sayfada">
+          <span class="label">Bu sayfada</span>
+          <ol>{toc.map((h) => <li><a href={`#${h.slug}`}>{h.text}</a></li>)}</ol>
+        </nav>
+      )}
+      <article class="prose">
+        <Content components={{ table: Table }} />
+      </article>
     </div>
 
-    <article class="prose">
-      <Content />
-    </article>
-
-    {p.gallery.length > 0 && (
-      <section>
-        <h2>Ekran görüntüleri</h2>
-        <div class="gallery">
-          {p.gallery.map((g) => (
-            <figure>
-              <img src={g.src} alt={g.alt} loading="lazy" decoding="async" />
-              <figcaption>{g.alt}</figcaption>
-            </figure>
-          ))}
-        </div>
-      </section>
-    )}
-
-    <nav class="pager" aria-label="Diğer projeler">
-      {prev ? <a href={`/projeler/${prev.id}`}><span>← Önceki</span>{prev.data.title}</a> : <span />}
-      {next ? <a href={`/projeler/${next.id}`} style="text-align:right"><span>Sonraki →</span>{next.data.title}</a> : <span />}
+    <nav class="next" aria-label="Sonraki proje">
+      <a href={`/projeler/${next.id}`}>
+        <span class="label">Sonraki · {pad(next.data.order)}</span>
+        <span class="t">{next.data.title} →</span>
+      </a>
     </nav>
   </main>
+
+  <script>
+    const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc a')];
+    const map = new Map(links.map((a) => [decodeURIComponent(a.hash.slice(1)), a]));
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          links.forEach((a) => a.classList.remove('on'));
+          map.get(e.target.id)?.classList.add('on');
+        }
+      },
+      { rootMargin: '0px 0px -70% 0px' },
+    );
+    document.querySelectorAll('.prose h2[id]').forEach((h) => io.observe(h));
+  </script>
 </Base>

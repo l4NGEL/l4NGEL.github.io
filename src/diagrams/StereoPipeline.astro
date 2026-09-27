@@ -1,0 +1,34 @@
+<svg class="dg" viewBox="0 0 760 252" role="img" aria-label="Stereo 3D MOT hattı: rektifikasyon, disparite, derinlik, tespit, 3B'ye yükseltme, takip, görsel odometri ve ROS2">
+  <defs>
+    <marker id="st-a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L8 4L0 8z" /></marker>
+    <marker id="st-k" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="ah key" d="M0 0L8 4L0 8z" /></marker>
+  </defs>
+  <text class="sm" x="10" y="12">derinlik</text>
+  <rect class="box" x="10" y="20" width="120" height="50" /><text class="hd" x="70" y="43" text-anchor="middle">Sol + sağ</text><text class="sm" x="70" y="60" text-anchor="middle">stereo çift</text>
+  <rect class="box" x="156" y="20" width="120" height="50" /><text class="hd" x="216" y="49" text-anchor="middle">Rektifikasyon</text>
+  <rect class="box" x="302" y="20" width="130" height="50" /><text class="hd" x="367" y="43" text-anchor="middle">Disparite</text><text class="sm" x="367" y="60" text-anchor="middle">BM / SGBM</text>
+  <rect class="box" x="458" y="20" width="146" height="50" /><text class="hd" x="531" y="43" text-anchor="middle">Metrik derinlik</text><text class="sm" x="531" y="60" text-anchor="middle">Z = fB/(d+doffs)</text>
+  <rect class="box" x="630" y="20" width="120" height="50" /><text class="hd" x="690" y="43" text-anchor="middle">3B nokta</text><text class="sm" x="690" y="60" text-anchor="middle">PLY çıktısı</text>
+
+  <text class="sm" x="156" y="102">takip</text>
+  <rect class="box" x="156" y="110" width="150" height="50" /><text class="hd" x="231" y="133" text-anchor="middle">YOLOv8 / v5</text><text class="sm" x="231" y="150" text-anchor="middle">ONNX · CPU / CUDA</text>
+  <rect class="box" x="332" y="110" width="150" height="50" /><text class="hd" x="407" y="133" text-anchor="middle">promoteTo3D</text><text class="sm" x="407" y="150" text-anchor="middle">kutudaki medyan Z</text>
+  <rect class="box key" x="508" y="110" width="242" height="50" /><text class="hd" x="629" y="133" text-anchor="middle">3B takip</text><text class="sm" x="629" y="150" text-anchor="middle">tahmin · kapı · eşle · güncelle</text>
+
+  <text class="sm" x="156" y="192">hareket + entegrasyon</text>
+  <rect class="box" x="156" y="200" width="176" height="46" /><text class="hd" x="244" y="221" text-anchor="middle">Görsel odometri</text><text class="sm" x="244" y="237" text-anchor="middle">ORB · 5-nokta RANSAC</text>
+  <rect class="box" x="358" y="200" width="190" height="46" /><text class="hd" x="453" y="221" text-anchor="middle">Ölçek</text><text class="sm" x="453" y="237" text-anchor="middle">stereo derinlikten</text>
+  <rect class="box" x="574" y="200" width="176" height="46" /><text class="hd" x="662" y="221" text-anchor="middle">ROS2 düğümü</text><text class="sm" x="662" y="237" text-anchor="middle">Detection3DArray</text>
+
+  <path class="ln" d="M130 45H154" marker-end="url(#st-a)" />
+  <path class="ln" d="M276 45H300" marker-end="url(#st-a)" />
+  <path class="ln" d="M432 45H456" marker-end="url(#st-a)" />
+  <path class="ln" d="M604 45H628" marker-end="url(#st-a)" />
+  <path class="ln" d="M70 70V135H154" marker-end="url(#st-a)" />
+  <path class="ln" d="M306 135H330" marker-end="url(#st-a)" />
+  <path class="ln dash" d="M531 70V90H407V108" marker-end="url(#st-a)" />
+  <path class="ln key" d="M482 135H506" marker-end="url(#st-k)" />
+  <path class="ln" d="M70 135V223H154" marker-end="url(#st-a)" />
+  <path class="ln" d="M332 223H356" marker-end="url(#st-a)" />
+  <path class="ln dash" d="M629 160V180H662V198" marker-end="url(#st-a)" />
+</svg>

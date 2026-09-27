@@ -2,66 +2,74 @@
 import Base from '../layouts/Base.astro';
 
 const skills = [
-  { title: 'Diller', items: 'Python, C++17, C#, Java, TypeScript/JavaScript, Rust, Dart, SQL' },
-  { title: 'Görü & ML', items: 'PyTorch, YOLOv8, OSNet Re-ID, OpenCV, ONNX Runtime, CUDA, Whisper, Transformers, PEFT/QLoRA, DPO, scikit-learn' },
-  { title: 'Sistem & Ağ', items: 'WPF/MVVM, ASP.NET Core, SignalR, ROS2, MQTT, Protobuf, FRRouting/OSPF, SDN, MAVLink, SNMP/NetFlow' },
-  { title: 'Web & Mobil', items: 'React, React Native/Expo, Flutter, Node.js/Express, FastAPI, PostgreSQL/PostGIS, Redis, Firebase' },
-  { title: 'Altyapı', items: 'Docker, GitHub Actions, GitLab CI, Jenkins, Testcontainers, MLflow, Linux' },
+  ['Diller', 'Python, C++17, C#, Java, TypeScript, Rust, Dart, SQL'],
+  ['Görü ve ML', 'PyTorch, YOLOv8, OSNet Re-ID, OpenCV, ONNX Runtime, CUDA, Whisper, Transformers, PEFT/QLoRA, DPO, scikit-learn'],
+  ['Sistem ve ağ', 'WPF/MVVM, ASP.NET Core, SignalR, ROS2, MQTT, Protobuf, FRRouting/OSPF, SDN, MAVLink, SNMP, NetFlow'],
+  ['Web ve mobil', 'React, React Native/Expo, Flutter, Node.js, FastAPI, PostgreSQL/PostGIS, Redis, Firebase'],
+  ['Altyapı', 'Docker, GitHub Actions, GitLab CI, Jenkins, Testcontainers, MLflow, Linux'],
 ];
 ---
-<Base title="Hakkımda — Beyza Nur Kılıç" description="Beyza Nur Kılıç — deneyim, eğitim ve teknik beceriler.">
-  <main class="wrap narrow">
-    <header class="p-head" style="padding-top:44px">
-      <h1><span class="bracket">Hakkımda</span></h1>
-      <p class="tagline">
-        Bursa Uludağ Üniversitesi Bilgisayar Mühendisliği mezunuyum; Papilon Savunma'da full-stack geliştirici
-        olarak çalışıyorum. Boş zamanımda bilgisayarlı görü, yapay zekâ ve savunma/sistem yazılımı üzerine
-        uçtan uca projeler geliştiriyorum.
-      </p>
+<Base title="Hakkımda · Beyza Nur Kılıç" description="Beyza Nur Kılıç: deneyim, eğitim ve teknik beceriler.">
+  <main class="wrap">
+    <header class="p-top">
+      <p class="crumb">Özgeçmiş</p>
+      <h1 class="p-title">Hakkımda</h1>
+      <div class="p-lead">
+        <p class="lead">
+          Bilgisayar mühendisiyim. Gün içinde Papilon Savunma'da web, mobil ve backend tarafında çalışıyorum;
+          geri kalan zamanımda bilgisayarlı görü, konuşma ve dil modelleri, ağ ve operatör yazılımları üzerine
+          uçtan uca projeler geliştiriyorum.
+        </p>
+        <dl class="facts">
+          <dt>Konum</dt><dd>Ankara</dd>
+          <dt>Diller</dt><dd>Türkçe (ana dil), İngilizce (B2), Almanca (A1)</dd>
+          <dt>E-posta</dt><dd><a href="mailto:byznrklc01@gmail.com">byznrklc01@gmail.com</a></dd>
+        </dl>
+      </div>
     </header>
 
-    <div class="prose">
-      <h2>Nasıl çalışırım</h2>
-      <p>
-        Bir projeyi "çalışıyor" diye bitirmiyorum; ölçüyorum. Hedefleri önceden yazıp sonuçları dokunulmamış
-        veri üzerinde test ediyorum, tutmayan hipotezleri ve negatif sonuçları da raporluyorum. Bir düzeltmeyi
-        gerçek koda almadan önce izole bir deneyde doğruluyorum; kendi ölçüm araçlarımdaki hataları da aynı
-        titizlikle arıyorum.
-      </p>
-      <p>
-        Bu yüzden proje sayfalarında hem sonuçları hem de <em>bilinen sınırlamaları</em> bulacaksınız.
-      </p>
+    <div class="shead"><h2><span>01</span>Deneyim</h2></div>
+    <ul class="cv-list">
+      <li>
+        <span class="when">Eki 2025 · bugün</span>
+        <div><b>Junior Full-Stack Developer</b><p>Papilon Savunma Teknolojileri, Ankara</p></div>
+      </li>
+      <li>
+        <span class="when">Tem 2025 · Eyl 2025</span>
+        <div><b>Yazılım Geliştirme Stajyeri</b><p>Papilon Savunma Teknolojileri, Ankara</p></div>
+      </li>
+    </ul>
+
+    <div class="shead"><h2><span>02</span>Eğitim</h2></div>
+    <ul class="cv-list">
+      <li>
+        <span class="when">2021 · 2025</span>
+        <div><b>Bilgisayar Mühendisliği, Lisans</b><p>Bursa Uludağ Üniversitesi · GPA 3.40 / 4.00</p></div>
+      </li>
+    </ul>
+
+    <div class="shead"><h2><span>03</span>Nasıl çalışıyorum</h2></div>
+    <div class="cols" style="margin-top:24px">
+      <p class="label">Kısaca</p>
+      <div class="prose">
+        <p>
+          Bir sonucu kabul etmeden önce, onu üretmemiş veriyle yeniden ölçüyorum. AutoTrack'te bir düzeltme tek
+          sekansta işe yarıyor gibi görünüyordu; yedi sekansa genişletince toplamda zarar verdiği ortaya çıktı ve
+          sebebini (kare hızına kör bir mesafe eşiği) bulup düzelttim. Stereo 3D MOT'ta hedefleri baştan yazdım,
+          çoğu tutmadı ve rapor bunu söylüyor.
+        </p>
+        <p>
+          Bir fikri gerçek koda almadan önce küçük ve izole bir deneyde deniyorum. Ölçüm araçlarımın kendisinde de
+          hata arıyorum: projelerimdeki en öğretici hataların birkaçı, değerlendirme betiklerinin içindeydi.
+        </p>
+      </div>
     </div>
 
-    <h2>Deneyim</h2>
-    <ul class="timeline">
-      <li><b>Junior Full-Stack Developer</b><span>Papilon Savunma Teknolojileri, Ankara · Ekim 2025 – devam</span></li>
-      <li><b>Yazılım Geliştirme Stajyeri</b><span>Papilon Savunma Teknolojileri, Ankara · Temmuz – Eylül 2025</span></li>
-    </ul>
-
-    <h2>Eğitim</h2>
-    <ul class="timeline">
-      <li><b>Bilgisayar Mühendisliği, Lisans</b><span>Bursa Uludağ Üniversitesi · 2021 – 2025 · GPA 3.40 / 4.00</span></li>
-    </ul>
-
-    <h2>Teknik beceriler</h2>
-    <div class="skills">
-      {skills.map((s) => (
-        <div>
-          <h3>{s.title}</h3>
-          {s.items}
-        </div>
+    <div class="shead"><h2><span>04</span>Teknik beceriler</h2></div>
+    <ul class="cv-list">
+      {skills.map(([k, v]) => (
+        <li><span class="when">{k}</span><div><p style="margin:0;color:var(--ink)">{v}</p></div></li>
       ))}
-    </div>
-
-    <h2>Diller</h2>
-    <p>Türkçe (ana dil) · İngilizce (B2) · Almanca (A1)</p>
-
-    <h2>İletişim</h2>
-    <p class="contact" style="margin-top:8px">
-      <a href="mailto:byznrklc01@gmail.com">byznrklc01@gmail.com</a>
-      <a href="https://github.com/l4NGEL" rel="noopener">github.com/l4NGEL</a>
-      <a href="https://www.linkedin.com/in/beyza-nur-kili%C3%A7/" rel="noopener">LinkedIn</a>
-    </p>
+    </ul>
   </main>
 </Base>

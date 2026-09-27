@@ -1,0 +1,98 @@
+---
+title: "Stereo 3D MOT"
+tagline: "C++17 ile sıfırdan stereo derinlik, 3B çoklu hedef takibi ve görsel odometri."
+summary: "İki kameradan gelen görüntüden her pikselin uzaklığını çıkaran, nesneleri 3B uzayda takip eden ve kameranın kendi hareketini kestiren bir C++ hattı. Hedefleri baştan yazdım, gerçek KITTI verisinde ölçtüm; çoğu tutmadı ve rapor bunu açıkça söylüyor."
+categories: [cv, sys]
+featured: true
+order: 2
+period: Eylül 2026
+year: 2026
+stack: [C++17, OpenCV, Eigen, ONNX Runtime, CUDA, ROS2 Humble, Docker, GoogleTest, GitHub Actions]
+metrics:
+  - { value: '12–17 ms', label: 'CUDA ile tespit, CPU’da ~52 ms' }
+  - { value: '%14.0', label: 'VO sürüklenmesi, KITTI segment metriği' }
+  - { value: '~6 FPS', label: 'uçtan uca, hedef 20 FPS idi' }
+repo: https://github.com/l4NGEL/stereo-3d-mot
+diagram: stereo
+cover:
+  src: /images/stereo-3d-mot/demo.webp
+  alt: Soldan sağa sol kamera karesi, tahmini disparite, renklendirilmiş derinlik ve referans disparite
+---
+import Figure from '../../components/Figure.astro';
+import StereoPipeline from '../../diagrams/StereoPipeline.astro';
+
+## Ne yapıyor
+
+Sistem bir stereo kamera çiftinden beş soruya cevap arıyor: her piksel ne kadar uzakta, bir nesne 3B uzayda nerede, bu karedeki nesne önceki karedekilerden hangisi, nesne nasıl hareket ediyor ve kameranın kendisi nasıl hareket ediyor.
+
+Projeyi 8 faza böldüm ve hepsini gerçek veride çalışır hale getirdim: stereo derinlik, YOLO çıkarımı, 3B takip, KITTI değerlendirmesi, görünüm destekli eşleştirme, hız optimizasyonu, görsel odometri ve ROS2 düğümü. Her şey Linux öncelikli, Docker içinde derleniyor; CI her push'ta testleri koşuyor.
+
+<Figure n={2} caption="Üç kol aynı stereo çekirdeği paylaşıyor: derinlik, takip, hareket kestirimi ve ROS2 entegrasyonu.">
+  <StereoPipeline />
+</Figure>
+
+## 2B tespitten 3B konuma
+
+Tespiti sol kamera görüntüsünde YOLOv8 ya da YOLOv5 yapıyor. Eğitim ve ONNX'e aktarma Python'da, çıkarım C++'ta ONNX Runtime ile. 2B kutuyu 3B'ye taşıyan `promoteTo3D`, kutunun içindeki derinlik değerlerinin medyanını alıp stereo geometriyle `(X, Y, Z)` konumunu hesaplıyor. Medyan, kutunun kenarına taşan arka plan piksellerine karşı dayanıklı.
+
+## Takip
+
+Takipçi her karede aynı döngüyü çalıştırıyor: tahmin, kapı, eşleştirme, güncelleme, sonra doğum ve ölüm kararları. Üç eşleştirme yöntemi aynı iz durumunu kullandığı için birbirinin yerine takılabiliyor:
+
+- **3B Mahalanobis:** ki-kare kapılı Mahalanobis mesafesi
+- **2B IoU:** derinlik hiç kullanılmadan kutu örtüşmesi
+- **Birleşik:** 3B mesafe, 2B örtüşme ve görünüm benzerliği
+
+Derinliğin kimlik korumaya katkısını ölçmek için, yakın (~2 m) ve uzak (~9 m) iki nesnenin görüntüde kesiştiği kontrollü bir sentetik sahne kurdum:
+
+| Yöntem | MOTA | IDF1 | ID kayması |
+|---|---|---|---|
+| 3B Mahalanobis + Hungarian | 0.979 | **0.989** | 0 |
+| 2B IoU + Hungarian | 0.929 | 0.543 | 2 |
+
+Bu kontrollü bir senaryo; 3B takibin her zaman 2B'den iyi olduğu anlamına gelmiyor. Gerçek veride durum farklı çıktı.
+
+## KITTI değerlendirmesi
+
+CLEAR-MOT (MOTA, MOTP, ID kayması, parçalanma) ve IDF1'i kendim yazdım; doğruluğunu rastgele denemeler ve elle kurulmuş uç durumlarla py-motmetrics'e karşı kontrol ettim. Tüm hattı gerçek KITTI tracking verisinde çalıştırdığımda MOTA negatif çıktı:
+
+| Yöntem | MOTA | IDF1 | FP | FN | Recall |
+|---|---|---|---|---|---|
+| 3B Mahalanobis | −2.30 | 0.182 | 2195 | 121 | 0.830 |
+| 2B IoU | −2.14 | 0.187 | 1980 | 214 | 0.699 |
+
+İlk açıklamam KITTI etiketlerinin eksik olduğuydu. Bağımsız değerlendirmede bunun yanlış pozitiflerin yalnızca ~%10'unu açıkladığını buldum. Kalan ~%90, tespit kaybolduktan sonra takipçinin raporlamaya devam ettiği "hayalet" izlerdi. README'deki açıklamayı yerinde düzelttim.
+
+## Hız
+
+Değişiklik yapmadan önce gerçek hattı profilledim:
+
+| Aşama | Kare başına süre |
+|---|---|
+| Stereo eşleştirme | 152.8 ms |
+| Görüntü okuma | 137.9 ms |
+| Tespit | 49.5 ms |
+| Derinlik, 3B'ye taşıma, görünüm | 2 ms'den az |
+| Takip | 0.19 ms |
+
+En pahalı algoritmik adım stereo eşleştirmeydi. Karolara bölünmüş paralel eşleştirmeyle takip metriklerini birebir koruyarak görüntü okuma hariç 4.9 FPS'ten 7.8 FPS'e çıktım. CUDA ile ilk karşılaştırmam "hızlanma yok" diyordu; tüm karelerin ortalamasını almıştım ve bir kerelik ~2.3 saniyelik CUDA başlatma süresi sonucu bozuyordu. Kararlı durumda CUDA tespiti 12 – 17 ms, CPU ~52 ms. Bu hatayı da raporda düzelttim.
+
+## Görsel odometri
+
+Tek kamera ölçeği bilemez; esas matristen yalnızca hareketin yönü çıkar. Ölçeği önceki fazlarda kurduğum stereo derinlikten çözüyorum: her iki karede de 3B noktası olan eşleşmeler için `X_şimdi = R·X_önce + s·t` denklemini nokta nokta `s` için çözüp medyanı alıyorum. Bu matematiği C++'a geçmeden önce Python'da bilinen bir sentetik kamera hareketiyle doğruladım; dönüş, ölçek ve konum 1e-14 hassasiyetle tuttu.
+
+KITTI odometry 04 sekansında (271 kare) KITTI segment metriği t_rel %14.0 çıktı. Bu, demet ayarlama ve döngü kapatma olmayan kareden kareye bir odometri; SLAM düzeyindeki sistemlerin (%1'in altı) çok gerisinde.
+
+## ROS2
+
+`s3m_ros2` paketi bilerek ince: stereo çiftini senkronize edip diğer tüm uygulamaların kullandığı aynı kütüphaneyi çağırıyor, algı mantığını yeniden yazmıyor. `/perception/tracks` üzerinden kararlı ID'li `Detection3DArray` ve nokta bulutu yayınlıyor. İlk derlemede colcon'un sembolik bağlantılı çalışma alanı, göreli `../..` yolunu kırıyordu; açık bir `S3M_REPO_ROOT` değişkeniyle çözdüm.
+
+## Önceden yazılmış hedefler
+
+Her bileşeni, hedefleri önceden sabitleyip hiç kullanılmamış veride yeniden ölçtüm. Metrik kodu ve sayılar birebir tekrarlanıyor, ama:
+
+- 3B takip, derinlik kullanmayan bir SORT tabanından daha iyi değil.
+- Görsel odometri KITTI metriğiyle %14 sürükleniyor.
+- Hat ~6 FPS'te çalışıyor; hedef 20 FPS'ti.
+
+Bu projeyi hedeflerini tutturduğu için değil, neyin neden tutmadığını ölçülebilir biçimde gösterdiği için önemsiyorum.

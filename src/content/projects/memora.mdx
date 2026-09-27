@@ -1,0 +1,29 @@
+---
+title: "Memora"
+tagline: "Dijital davetiye, RSVP, QR ile misafir erişimi ve ortak fotoğraf galerisi olan etkinlik platformu."
+summary: "Düğün ve benzeri etkinlikler için bir platform. Ev sahibi mobil uygulamadan etkinliği yönetiyor; misafirler uygulama indirmeden, bir QR kodu okutarak davetiyeye ulaşıyor, katılımını bildiriyor ve fotoğraf yüklüyor."
+categories: [web]
+order: 16
+period: Temmuz 2026
+year: 2026
+stack: [Node.js, Express, PostgreSQL, JWT, Flutter, Vite, WebSocket, iyzico, Cloudflare R2, Docker]
+metrics:
+  - { value: '15', label: 'REST uç noktası' }
+  - { value: '3', label: 'istemci: backend, mobil, web' }
+---
+
+## Bileşenler
+
+- **Backend (Node.js + Express + PostgreSQL):** access ve refresh token'lı JWT; Google ve Apple girişinde ID token'ın imzası, yayıncısı ve hedef kitlesi sunucuda doğrulanıyor. Ödeme için iyzico entegrasyonu, sağlık kontrolü veritabanını da yokluyor.
+- **Ev sahibi uygulaması (Flutter):** etkinlik oluşturma, RSVP ve medya paneli, masonry galeri, QR kod yönetimi, WebSocket ile canlı slayt gösterisi.
+- **Misafir portalı (Vite):** QR ile açılan davetiye sayfası, katılım formu (katılım, yemek tercihi, mesaj), sürükle bırak ve kameradan fotoğraf / video yükleme, geri sayım.
+
+## Dış servisler isteğe bağlı
+
+Depolama (R2 / S3), e-posta, sosyal giriş ve ödemenin hepsi ortam değişkenleriyle açılıyor. Anahtar yoksa ilgili özellik kapanıyor ama uygulama çalışmaya devam ediyor; örneğin depolama anahtarı yoksa dosyalar yerel diske yazılıyor. Bu sayede proje hiçbir dış servis anahtarı olmadan da yerelde çalışabiliyor.
+
+## Güvenlik
+
+- Üretim ortamında `JWT_SECRET` en az 32 karakter değilse ya da yönetici şifresi varsayılan bırakılmışsa uygulama açılışta duruyor.
+- CORS bir izin listesiyle sınırlı.
+- Bilinen `npm audit` uyarıları yalnızca iki ödeme ve kimlik doğrulama kütüphanesinin dolaylı bağımlılıklarında; README'de belgeli.

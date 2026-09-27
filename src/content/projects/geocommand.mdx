@@ -1,0 +1,75 @@
+---
+title: "GeoCommand"
+tagline: "Harita üzerinde canlı araç takibi, bölge olayları ve görev atama; WPF + ASP.NET Core + PostGIS."
+summary: "Operatörün simüle araçları haritada canlı izlediği, kendi çizdiği bölgelere giriş ve çıkışları takip ettiği, araçlara görev atadığı bir masaüstü uygulaması. En çok uğraştığım kısım, bağlantı koptuğunda ve geri geldiğinde hiçbir olayın kaybolmaması ya da iki kez sayılmamasıydı."
+categories: [sys, web]
+order: 5
+period: Eylül 2026
+year: 2026
+stack: [C#, .NET 10, WPF, CommunityToolkit.Mvvm, Mapsui, ASP.NET Core, SignalR, EF Core, PostGIS, Serilog, xUnit, Testcontainers]
+metrics:
+  - { value: '86', label: 'test, 6 tanesi gerçek PostGIS ile' }
+  - { value: '4', label: 'katmanda yinelenen olay koruması' }
+  - { value: 'WGS84', label: 'bölge hesabı, ekran pikseli değil' }
+cover:
+  src: /images/geocommand/gorev-atama.webp
+  alt: Görev atama ekranı; araç listesi, harita, seçili aracın ayrıntıları ve canlı olay listesi
+---
+import Figure from '../../components/Figure.astro';
+import GeoIngest from '../../diagrams/GeoIngest.astro';
+
+## Ne yapıyor
+
+Dört simüle araç (ALFA-1, BRAVO-2, CHARLIE-3, DELTA-4) haritada hareket ediyor. Operatör haritaya tıklayarak çokgen bölgeler çiziyor, araçların bu bölgelere girip çıkmasını canlı olay listesinde görüyor, araçlara öncelikli görevler atıyor ve seçili aracın belirli bir tarih aralığındaki izini sorguluyor.
+
+Eğitim amaçlı bir simülasyon; hiçbir gerçek sisteme, cihaza ya da kurumsal veriye bağlanmıyor.
+
+## Mimari
+
+Sunucu dört katmandan oluşuyor. `Domain` hiçbir projeye bağımlı değil; `Application` veritabanına kendi tanımladığı bir arayüz üzerinden erişiyor ve `Infrastructure` bunu EF Core ile uyguluyor. Soyutlamaları yalnızca gerçek bir ihtiyaç olduğunda ekledim. Örneğin `IPositionSource`'un iki gerçek uygulaması var (simülatör ve CSV kayıt dosyası). Ayrı bir repository katmanı eklemedim, çünkü EF Core'un `DbSet`'i zaten bu işi görüyor.
+
+Bir konum bildirimi sisteme girdiğinde şu yolu izliyor:
+
+<Figure n={2} caption="Bir konum bildiriminin yolu. Kayıt ve bölge olayları tek bir veritabanı işleminde yazılıyor.">
+  <GeoIngest />
+</Figure>
+
+## Aynı olayı iki kez üretmemek
+
+Bu tür sistemlerde en sinsi hata, aynı bölge girişinin iki kez raporlanması. Bunu dört ayrı katmanda engelliyorum:
+
+1. **Durum geçişi:** Olay yalnızca "içeride / dışarıda" durumu değiştiğinde üretiliyor; üyelik `(araç, bölge)` birincil anahtarlı bir tabloda tutuluyor.
+2. **İdempotent alma:** Bildirimin zamanı aracın son kayıtlı zamanından yeni değilse `Duplicate` sayılıyor. Zaman damgalarını PostgreSQL'in mikrosaniye hassasiyetine indirgiyorum; yoksa veritabanından okunan zaman ile tekrar gönderilen bildirim farklı görünüyordu. Bu hatayı bir test yakaladı.
+3. **Eşzamanlılık:** Aynı araç üzerindeki işlemler araç başına bir kilitle sıraya giriyor. Veritabanında ek güvence olarak kısmi tekil indeksler var: araç başına tek aktif görev, aynı bölge olayının tekrarı yasak.
+4. **İstemci:** Olaylar kimliğe göre tekilleştiriliyor; yeniden bağlanınca alınan anlık görüntü, canlı akıştan gelen daha yeni bir güncellemenin üzerine yazmıyor.
+
+## Bağlantı kopunca
+
+İstemci önce SignalR'a abone oluyor, sonra REST'ten araçları, son olayları ve bölgeleri çekiyor. Sıra önemli: tersini yapsaydım, çekme ile abonelik arasındaki boşlukta gelen güncellemeler kaybolurdu. Sunucu tamamen kapanıp açılsa bile istemci artan aralıklarla yeniden bağlanmayı deniyor ve ekranda bir uyarı bandı gösteriyor.
+
+<Figure n={3} src="/images/geocommand/baglanti-koptu.webp" caption="API bağlantısı koptuğunda uyarı bandı ve durum göstergesi" bare />
+
+## Coğrafi doğruluk
+
+Harita Web Mercator'da çiziliyor ama tüm hesaplar WGS84 enlem / boylam üzerinde. Tıklanan nokta enlem / boylama çevrilip API'ye öyle gidiyor. Bölge testi sınır kutusuyla değil, NetTopologySuite ile gerçek çokgene göre yapılıyor. Bir bölge çizildiğinde içinde zaten bulunan araçlar için "giriş" olayı üretmiyorum; araç girmedi, bölge onun etrafına çizildi.
+
+<Figure n={4} src="/images/geocommand/konum-gecmisi.webp" caption="Seçili aracın tarih aralığındaki izi ve o aralıktaki olaylar" bare />
+
+## Teknoloji seçimleri
+
+| Alan | Seçim | Neden |
+|---|---|---|
+| Çalışma zamanı | .NET 10 LTS | .NET 8'in desteği Kasım 2026'da bitiyor |
+| Masaüstü | WPF + CommunityToolkit.Mvvm | Kaynak üreteçleri tekrar eden kodu kaldırıyor |
+| Harita | Mapsui + OpenStreetMap | Serbest lisans, NTS geometrisini doğrudan çiziyor |
+| Canlı veri | SignalR, tipli hub | Sunucudan istemciye itme, otomatik yeniden bağlanma |
+| Veritabanı | PostgreSQL 17 + PostGIS 3.5 | GIST indeksli geometri, `ST_Covers` sorguları |
+| Test | xUnit + Testcontainers | Entegrasyon testleri sahte değil gerçek PostGIS'e karşı |
+
+## Sınırlamalar
+
+- Tek API örneği varsayılıyor. Birden çok örnek için dağıtık kilit ve SignalR backplane gerekir.
+- Kimlik doğrulama yok; yalnızca yerel demo için.
+- Nokta-çokgen testi düzlemsel. Çok büyük bölgelerde kenarlar jeodezik değil.
+- API yeniden başlarsa simülatör baştan başlıyor ve araçlar ilk konumlarına "atlıyor"; bu atlama sahte bir bölge olayı üretebilir.
+- WPF istemcinin durum mantığı birim testli; ekran akışlarını UI Automation betiğiyle doğruladım.

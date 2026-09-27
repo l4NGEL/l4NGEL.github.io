@@ -1,0 +1,28 @@
+---
+const steps = [
+  ['Kaynak', 'simülatör, CSV', 'veya HTTP POST'],
+  ['Doğrula', 'aralık, gelecek', 'zaman, araç'],
+  ['Araç kilidi', 'eski bildirim', '→ Duplicate'],
+  ['Kaydet', 'konum geçmişi', '+ son durum'],
+  ['Bölge testi', 'önceki ↔ yeni', 'üyelik → olay'],
+  ['Yayınla', 'SignalR hub', '→ WPF istemci'],
+];
+const x = (i: number) => 10 + i * 128;
+---
+<svg class="dg" viewBox="0 0 776 160" role="img" aria-label="GeoCommand'da bir konum bildiriminin yolu: kaynak, doğrulama, araç kilidi, kayıt, bölge testi ve SignalR yayını">
+  <defs>
+    <marker id="gi-a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L8 4L0 8z" /></marker>
+  </defs>
+  {steps.map(([t, a, b], i) => (
+    <>
+      <text class="sm" x={x(i)} y="30" style="fill:var(--signal)">{String(i + 1).padStart(2, '0')}</text>
+      <rect class:list={['box', { key: i === 4 }]} x={x(i)} y="38" width="112" height="74" />
+      <text class="hd" x={x(i) + 10} y="60">{t}</text>
+      <text class="sm" x={x(i) + 10} y="82">{a}</text>
+      <text class="sm" x={x(i) + 10} y="98">{b}</text>
+      {i < steps.length - 1 && <path class="ln" d={`M${x(i) + 112} 75H${x(i + 1) - 2}`} marker-end="url(#gi-a)" />}
+    </>
+  ))}
+  <path class="ln" d={`M${x(3)} 124V132H${x(4) + 112}V124`} />
+  <text class="sm" x={(x(3) + x(4) + 112) / 2} y="150" text-anchor="middle">tek veritabanı işlemi</text>
+</svg>

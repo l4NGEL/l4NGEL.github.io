@@ -11,10 +11,7 @@ const { title, description, image } = Astro.props;
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = image ? new URL(image, Astro.site).href : undefined;
-const nav = [
-  { href: '/', label: 'Projeler' },
-  { href: '/hakkimda', label: 'Hakkımda' },
-];
+const onWork = path === '/' || path.startsWith('/projeler');
 ---
 <!doctype html>
 <html lang="tr">
@@ -34,7 +31,7 @@ const nav = [
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400&display=swap"
       rel="stylesheet"
     />
     <script is:inline>
@@ -45,30 +42,33 @@ const nav = [
     </script>
   </head>
   <body>
-    <nav class="site-nav" aria-label="Site">
+    <header class="topbar">
       <div class="wrap">
-        <a class="brand" href="/">Beyza Nur Kılıç</a>
-        <div class="nav-links">
-          {nav.map((n) => (
-            <a href={n.href} aria-current={path === n.href || (n.href === '/' && path.startsWith('/projeler')) ? 'page' : undefined}>
-              {n.label}
-            </a>
-          ))}
-          <button class="theme-btn" id="theme" type="button" aria-label="Açık/koyu tema">tema</button>
-        </div>
+        <a class="mark" href="/">B.N. Kılıç<span>.</span></a>
+        <nav class="menu" aria-label="Site">
+          <span class="coord">39.93°N 32.86°E</span>
+          <a href="/" aria-current={onWork ? 'page' : undefined}>Çalışmalar</a>
+          <a href="/hakkimda" aria-current={path === '/hakkimda' ? 'page' : undefined}>Hakkımda</a>
+          <button class="theme" id="theme" type="button" aria-label="Açık/koyu tema">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M7 1a6 6 0 0 1 0 12z" fill="currentColor"/></svg>
+          </button>
+        </nav>
       </div>
-    </nav>
+    </header>
 
     <slot />
 
-    <footer class="site-foot">
+    <footer class="foot">
       <div class="wrap">
-        <span>© {new Date().getFullYear()} Beyza Nur Kılıç</span>
-        <span>
-          <a href="mailto:byznrklc01@gmail.com">E-posta</a> ·
-          <a href="https://github.com/l4NGEL" rel="noopener">GitHub</a> ·
-          <a href="https://www.linkedin.com/in/beyza-nur-kili%C3%A7/" rel="noopener">LinkedIn</a>
-        </span>
+        <p class="label">Bir proje, pozisyon ya da soru için</p>
+        <a class="big" href="mailto:byznrklc01@gmail.com">byznrklc01@gmail.com</a>
+        <div class="foot-row">
+          <span>
+            <a href="https://github.com/l4NGEL" rel="noopener">GitHub</a>
+            <a href="https://www.linkedin.com/in/beyza-nur-kili%C3%A7/" rel="noopener">LinkedIn</a>
+          </span>
+          <span>© {new Date().getFullYear()} Beyza Nur Kılıç · Ankara</span>
+        </div>
       </div>
     </footer>
 

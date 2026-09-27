@@ -1,0 +1,40 @@
+---
+title: "SyncLedger"
+tagline: "Çevrimdışı çalışan gelir-gider uygulaması; cihazlar arası senkron ve çakışma çözümü."
+summary: "Telefon ve web arasında senkron çalışan bir gelir-gider uygulaması. Asıl konu liste ekranı değil, şu soru: kullanıcı çevrimdışıyken bir kaydı değiştirirse ve aynı kayıt başka bir cihazda da değişmişse ne olur?"
+categories: [web]
+order: 14
+period: Ağustos 2026
+year: 2026
+stack: [React Native, Expo, TypeScript, Redux Toolkit, Firebase Firestore, AsyncStorage, Jest]
+metrics:
+  - { value: 'outbox', label: 'çökmeye dayanıklı gönderim kuyruğu' }
+  - { value: '3', label: 'çakışma çözüm stratejisi' }
+repo: https://github.com/l4NGEL/SyncLedger
+---
+
+## Mimari
+
+```
+                    Firebase Firestore
+                  push ▲         ▼ onSnapshot
+          ┌────────────┴─────────┴────────────┐
+          │            Redux durumu           │
+          │   (AsyncStorage'a gecikmeli kayıt) │
+          └───────┬───────────────────┬───────┘
+          kullanıcı işlemi      başka cihazdan değişiklik
+          durum: pending        durum: synced / conflict
+```
+
+- **Gönderim:** Her değişiklik önce yerel duruma ve bir outbox kuyruğuna yazılıyor; arayüz beklemeden güncelleniyor. Kuyruk sırayla Firestore'a gönderiliyor. Ağ hatasında kalan kayıtlar bir sonraki senkrona kalıyor; uygulama arada kapansa bile kaybolmuyor.
+- **Alım:** Firestore `onSnapshot` ile dinleniyor. Bu olmadan cihazlar birbirinin verisini hiç göremezdi.
+
+## Çakışma
+
+Her kaydın bir `version` alanı var. Gönderim bir Firestore transaction'ı içinde yapılıyor: cihazın bildiği sürüm sunucudakiyle uyuşmuyorsa, kayıt arada başka bir cihazda değişmiş demektir ve yazma reddedilip `conflict` dönüyor. Kullanıcıya iki sürüm yan yana gösteriliyor ve üç seçenek sunuluyor: yerel sürümü tut, sunucu sürümünü kabul et ya da birleştir.
+
+## Denemek için
+
+Uygulamada çevrimdışı modu açıp kayıt eklediğinizde kayıt "bekliyor" durumunda kalıyor, tekrar çevrimiçi olunca kendiliğinden gönderiliyor. "Uzaktan değişikliği simüle et" düğmesi başka bir cihazın aynı kaydı değiştirdiğini taklit ediyor ve bir sonraki senkronda gerçek bir çakışma üretiyor. Aynı anda telefonda ve web'de açınca birinde eklenen kayıt birkaç saniye içinde diğerinde görünüyor.
+
+Reducer'lar ve senkron motoru Jest ile, çakışma senaryosu dahil test ediliyor.

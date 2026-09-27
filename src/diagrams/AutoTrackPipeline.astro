@@ -1,0 +1,51 @@
+<svg class="dg" viewBox="0 0 752 268" role="img" aria-label="AutoTrack işleme hattı: tespit, adaptif birleşim, Hungarian atama, iz güveni ve öncelik motoru">
+  <defs>
+    <marker id="at-a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L8 4L0 8z" /></marker>
+    <marker id="at-k" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="ah key" d="M0 0L8 4L0 8z" /></marker>
+  </defs>
+
+  <rect class="box" x="10" y="70" width="120" height="56" />
+  <text class="hd" x="70" y="94" text-anchor="middle">Video karesi</text>
+  <text class="sm" x="70" y="112" text-anchor="middle">dosya/kamera/RTSP</text>
+
+  <rect class="box" x="156" y="70" width="120" height="56" />
+  <text class="hd" x="216" y="94" text-anchor="middle">YOLOv8</text>
+  <text class="sm" x="216" y="112" text-anchor="middle">tespit + sınıf</text>
+
+  <rect class="box key" x="300" y="12" width="212" height="172" />
+  <text class="hd" x="314" y="34">Adaptif birleşim</text>
+  <rect class="box" x="314" y="46" width="184" height="36" />
+  <text x="326" y="69">S_iou</text><text class="sm" x="486" y="69" text-anchor="end">α · kutu örtüşmesi</text>
+  <rect class="box" x="314" y="90" width="184" height="36" />
+  <text x="326" y="113">S_hareket</text><text class="sm" x="486" y="113" text-anchor="end">β · Kalman</text>
+  <rect class="box" x="314" y="134" width="184" height="36" />
+  <text x="326" y="157">S_reid</text><text class="sm" x="486" y="157" text-anchor="end">γ · OSNet 512-d</text>
+
+  <rect class="box" x="540" y="70" width="202" height="56" />
+  <text class="hd" x="641" y="94" text-anchor="middle">Hungarian atama</text>
+  <text class="sm" x="641" y="112" text-anchor="middle">+ mesafe kapısı</text>
+
+  <rect class="box" x="540" y="206" width="202" height="50" />
+  <text class="hd" x="641" y="227" text-anchor="middle">İz güveni</text>
+  <text class="sm" x="641" y="244" text-anchor="middle">stable · uncertain · lost</text>
+
+  <rect class="box" x="300" y="206" width="212" height="50" />
+  <text class="hd" x="406" y="227" text-anchor="middle">Öncelik motoru</text>
+  <text class="sm" x="406" y="244" text-anchor="middle">hız · bölge · bekleme</text>
+
+  <rect class="box" x="156" y="206" width="120" height="50" />
+  <text class="hd" x="216" y="227" text-anchor="middle">Overlay</text>
+  <text class="sm" x="216" y="244" text-anchor="middle">+ JSONL log</text>
+
+  <text class="sm" x="10" y="150">Ağırlık kuralları (iz başına):</text>
+  <text class="sm" x="10" y="167">örtülme        → γ↑ α↓</text>
+  <text class="sm" x="10" y="183">hızlı hareket  → β↑ α↓</text>
+  <text class="sm" x="10" y="199">zayıf kırpıntı → γ↓</text>
+
+  <path class="ln" d="M130 98H154" marker-end="url(#at-a)" />
+  <path class="ln key" d="M276 98H298" marker-end="url(#at-k)" />
+  <path class="ln key" d="M512 98H538" marker-end="url(#at-k)" />
+  <path class="ln" d="M641 126V204" marker-end="url(#at-a)" />
+  <path class="ln" d="M540 231H514" marker-end="url(#at-a)" />
+  <path class="ln" d="M300 231H278" marker-end="url(#at-a)" />
+</svg>

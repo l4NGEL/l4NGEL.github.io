@@ -1,0 +1,60 @@
+---
+title: "AvioHMI"
+tagline: "Canlı ADS-B verisiyle çalışan görev bilgisayarı, kokpit ekranı ve yer kontrol paneli."
+summary: "Bir uçak filosunu yöneten görev bilgisayarı ve onun üç istemcisi. Simülasyonla ya da OpenSky Network'ten Türkiye üzerindeki gerçek uçak trafiğiyle çalışıyor; bir sensör videosunu GPU'da işleyip canlı HUD'a basıyor."
+categories: [sys, web, cv]
+featured: true
+order: 3
+period: Temmuz – Ağustos 2026
+year: 2026
+stack: [Java 17, C++, CUDA, JNI, FFmpeg, Flutter, React, TypeScript, WebXR, PostgreSQL/PostGIS, Docker]
+metrics:
+  - { value: '~30', label: 'gerçek uçak, canlı ADS-B' }
+  - { value: '3', label: 'istemci: web, kokpit, AR/VR' }
+  - { value: '3', label: 'CI: GitHub, GitLab, Jenkins' }
+repo: https://github.com/l4NGEL/AvioHMI
+cover:
+  src: /images/aviohmi/fleet-map.webp
+  alt: Yer kontrol paneli, filo ve harita sayfası; OpenSky'dan çekilen gerçek trafik
+---
+import Figure from '../../components/Figure.astro';
+import AvioArchitecture from '../../diagrams/AvioArchitecture.astro';
+
+## Ne yapıyor
+
+Çekirdek, üç uçaklık bir rota simülasyonu ya da OpenSky Network'ten gelen canlı ADS-B verisiyle bir filoyu yönetiyor. Konum, hız, yön, yatış, yunuslama ve yakıt durumu her ~500 ms'de WebSocket üzerinden yayınlanıyor. Bu yayını üç ayrı istemci kullanıyor: web tabanlı yer kontrol paneli, dokunmatik kokpit ekranı ve telefonla çalışan AR / VR görünümler.
+
+Paralelde, bir sensör videosundan birkaç saniyede bir kare çözülüp GPU'da Sobel kenar tespitinden geçiriliyor, üzerine lider uçağın telemetrisi basılıyor ve yer kontrolde "sensör akışı" olarak gösteriliyor.
+
+<Figure n={2} caption="Çekirdek tek doğruluk kaynağı. Turuncu hatlar canlı telemetri ve GPU üzerindeki HUD bileşimi.">
+  <AvioArchitecture />
+</Figure>
+
+## Çekirdek
+
+Projede Maven ya da Gradle kullanamıyordum; bu yüzden WebSocket el sıkışması, çerçeveleme ve kapanış sırasını JDK ile elle yazdım. İstemci bağlandığında önce rota noktalarını, sonra her uçak için periyodik telemetri mesajlarını alıyor. Yatış ve yunuslama açıları, ardışık iki ölçüm arasındaki yön ve irtifa farkından sunucuda türetiliyor.
+
+Telemetri, PostgreSQL / PostGIS erişilebilirse oraya yazılıyor; değilse çekirdek bellek içi depoya geçip bunu açılışta söylüyor. Aynı mantık her yerde geçerli: ffmpeg yoksa sentetik test karesi, GPU kütüphanesi yoksa alt süreç, çekirdek yoksa istemcide yerel simülatör. Bir parça eksik olduğunda sistem çökmek yerine daha az yetenekle çalışmaya devam ediyor.
+
+## GPU hattı
+
+Sobel çekirdeği CUDA'da; etrafındaki C++ tarafı kendi GPU belleğinin ömrünü yöneten RAII sınıflarıyla yazıldı. Java bunu her karede bir süreç başlatarak değil, JNI köprüsüyle aynı süreç içinden çağırıyor. Yerel kütüphane o platform için derlenmemişse `edge_detect.exe` alt süreç olarak çalıştırılıyor.
+
+## İstemciler
+
+- **Yer kontrol (React + TypeScript):** gösterge paneli, filo haritası, tekrar oynatma, uyarılar, sensör akışı, raporlar ve ayarlar. Seçili uçak ve uyarı geçmişi sayfalar arasında korunuyor.
+- **Kokpit MFD (Flutter):** PFD, NAV ve SYS sayfaları; yapay ufuk, hız ve irtifa bantları, pusula gülü. Linux dahil birden çok platform için derleniyor.
+- **AR görünüm:** telefon kamerasının üzerine, cihazın gerçek GPS konumu ve pusula yönünden hesaplanan bir ok çiziliyor; ok gerçek bir rota noktasını gösteriyor.
+- **Uyarılar:** hız aşımı, rotadan sapma (planlı rotaya olan çapraz mesafe) ve düşük yakıt, gerçek telemetriden hesaplanıyor.
+
+## Güvenlik ve işletim
+
+Kimlik doğrulama açıldığında çekirdek JWT ya da API anahtarı istiyor; CORS izin listesi, TLS anahtar deposu, telemetri saklama süresi ve saatlik temizlik ortam değişkenleriyle ayarlanıyor. `/metrics` bağlı istemci sayısını, kayıt sayısını ve çalışma süresini veriyor. Yer kontrol 15 saniye telemetri alamazsa yeniden bağlanıyor.
+
+<Figure n={3} src="/images/aviohmi/dashboard.webp" caption="Gösterge paneli: filo KPI'ları, durum dağılımı ve son uyarılar" bare />
+
+<Figure n={4} src="/images/aviohmi/pfd.webp" caption="Kokpit MFD, PFD sayfası" bare />
+
+## Testler ve CI
+
+Çekirdekte birim, WebSocket ve Postgres testleri; yer kontrolde Vitest ve Playwright uçtan uca testleri var. Aynı derleme ve test hattı GitHub Actions, GitLab CI ve Jenkins için ayrı ayrı tanımlı.

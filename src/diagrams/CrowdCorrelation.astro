@@ -1,0 +1,40 @@
+---
+// Veri: AutoTrack docs/RESEARCH_LOG.md, Faz 3.1 replikasyonu (7 MOT17 FRCNN sekansı).
+// x = ortalama kalabalık, y = E-oranı (%). Pearson r = 0.892, doğrusal uyum y = 2.265x + 9.97.
+const L = 56, W = 488, T = 16, H = 270;
+const px = (x: number) => L + (x / 45) * W;
+const py = (y: number) => T + ((100 - y) / 100) * H;
+const pts = [
+  { s: '02', x: 13.5, y: 59.3, dx: -9, anchor: 'end' },
+  { s: '04', x: 41.0, y: 95.7, dx: -10, dy: 16, anchor: 'end' },
+  { s: '05', x: 6.2, y: 6.5, dx: 9, anchor: 'start' },
+  { s: '09', x: 7.2, y: 15.4, dx: 9, anchor: 'start' },
+  { s: '10', x: 15.0, y: 62.1, dx: 9, anchor: 'start' },
+  { s: '11', x: 6.1, y: 26.3, dx: 9, anchor: 'start' },
+  { s: '13', x: 15.7, y: 41.7, dx: 9, anchor: 'start' },
+];
+const trendEndX = (100 - 9.9746) / 2.2653;
+---
+<svg class="dg" viewBox="0 0 560 332" role="img" aria-label="Yedi MOT17 sekansında ortalama kalabalık ile sınır-tanımı hata oranı arasındaki ilişki, r = 0.892">
+  {[0, 25, 50, 75, 100].map((v) => (
+    <>
+      <line class="grid" x1={L} x2={L + W} y1={py(v)} y2={py(v)} />
+      <text class="sm" x={L - 8} y={py(v) + 4} text-anchor="end">{v}</text>
+    </>
+  ))}
+  {[0, 10, 20, 30, 40].map((v) => (
+    <text class="sm" x={px(v)} y={T + H + 16} text-anchor="middle">{v}</text>
+  ))}
+  <line class="axis" x1={L} x2={L + W} y1={T + H} y2={T + H} />
+  <line class="axis" x1={L} x2={L} y1={T} y2={T + H} />
+  <line class="trend" x1={px(0)} y1={py(9.9746)} x2={px(trendEndX)} y2={py(100)} />
+  {pts.map((p) => (
+    <>
+      <circle class="pt" cx={px(p.x)} cy={py(p.y)} r="5" />
+      <text class="sm" x={px(p.x) + p.dx} y={py(p.y) + 4 + (p.dy ?? 0)} text-anchor={p.anchor}>MOT17-{p.s}</text>
+    </>
+  ))}
+  <text class="hd" x={L + 14} y={T + 22}>r = 0.892 · n = 7</text>
+  <text class="sm" x={L + W / 2} y="328" text-anchor="middle">ortalama kalabalık (sınır karesinde görünen diğer kişi sayısı)</text>
+  <text class="sm" x="14" y={T + H / 2} text-anchor="middle" transform={`rotate(-90 14 ${T + H / 2})`}>sınır-tanımı hatası (%)</text>
+</svg>

@@ -1,0 +1,103 @@
+---
+title: "AutoTrack"
+tagline: "Kalabalık sahnelerde çoklu hedef takibi ve ID kaymalarının kök neden analizi."
+summary: "Videodaki kişi ve araçları tespit edip kare kare takip eden, hangisinin öncelikli olduğunu gerekçesiyle söyleyen bir sistem. İşin asıl kısmı, ekranda gördüğüm bir ID kaymasının peşine düşüp onu 7 benchmark sekansında ölçülebilir bir kök nedene bağlamak oldu."
+categories: [cv, ai]
+featured: true
+order: 1
+period: Ağustos – Eylül 2026
+year: 2026
+stack: [Python, PyTorch, YOLOv8, OSNet, filterpy, motmetrics, Gradio, OpenCV]
+metrics:
+  - { value: '%88.6', label: 'Re-ID Rank-1, Market-1501' }
+  - { value: 'r = 0.892', label: 'hata oranı ile kalabalık, 7 sekans' }
+  - { value: '188', label: 'birim ve entegrasyon testi' }
+cover:
+  src: /images/autotrack/demo.webp
+  alt: MOT17-04 üzerinde takip çıktısı; her kutuda iz kimliği, sınıf ve güven durumu
+---
+import Figure from '../../components/Figure.astro';
+import AutoTrackPipeline from '../../diagrams/AutoTrackPipeline.astro';
+import CrowdCorrelation from '../../diagrams/CrowdCorrelation.astro';
+
+## Problem
+
+Hazır bir tespit modeline basit bir takipçi bağlamak kolay; zor olan, iki kişi yan yana yürüdüğünde, biri bir direğin arkasına geçtiğinde ya da kamera hızlı döndüğünde kimliği korumak. Kutu örtüşmesine (IoU) dayanan takipçiler tam bu anlarda ID değiştiriyor.
+
+Benim yaklaşımım, üç ayrı sinyali (kutu örtüşmesi, Kalman hareket tahmini, OSNet görünüm benzerliği) sabit ağırlıklarla değil, her iz için o anki duruma göre değişen ağırlıklarla birleştirmekti. Örtülen bir kişide kutu geometrisi güvenilmez hale geldiği için görünüme, hızlı hareket eden bir hedefte ise hareket modeline daha çok güveniyorum.
+
+<Figure n={2} caption="İşleme hattı. Turuncu kısım projenin kendi katkısı olan adaptif birleşim.">
+  <AutoTrackPipeline />
+</Figure>
+
+## Mimari
+
+Birleşik skor `S = α·S_iou + β·S_hareket + γ·S_reid` şeklinde, `α + β + γ = 1`. Taban ağırlıklar 0.4 / 0.3 / 0.3; `compute_adaptive_weights()` bunları üç sinyale göre kaydırıyor:
+
+| Sinyal | Ne zaman tetikleniyor | Etkisi |
+|---|---|---|
+| Örtülme | izin tahmini kutusu başka bir izle IoU > 0.15 | γ artar, α azalır |
+| Hızlı hareket | Kalman hız vektörü kare köşegenine göre eşiği aşıyor | β artar, α azalır |
+| Zayıf kırpıntı | tespit güveni 0.55'in altında ya da kutu çok küçük | γ azalır |
+
+OSNet insan verisiyle eğitildiği için kişi dışındaki sınıflarda (araç, bisiklet) γ her zaman 0. Atamayı Hungarian algoritması yapıyor; her ize ayrıca tespit, hareket ve Re-ID güveninden türeyen bir *iz güveni* hesaplanıp `stable`, `uncertain` ya da `lost_candidate` olarak etiketleniyor. Son katman, hız, hassas bölge ve bekleme süresinden bir öncelik skoru üretip her kararın gerekçesini yazan kural tabanlı bir motor.
+
+## Re-ID eğitimi
+
+OSNet'i Market-1501 üzerinde RTX 2080'de 15 epoch eğittim: **Rank-1 %88.6, mAP %72.0**. İlk tam değerlendirmede adaptif takipçi, sade IoU tabanını geçemedi. Sebep domain farkıydı: Market-1501 yakın plan, MOT17 ise uzaktan çekilmiş kalabalık sokak görüntüleri.
+
+MOT17'nin iki sekansından (09, 11) 62 kimlik ve 5.216 kişi kırpıntısı çıkarıp modeli bunlarla fine-tune ettim. Değerlendirme sekansları (02, 04) eğitimde hiç kullanılmadı. MOT17-02'de adaptif takipçi ilk kez tabanı üç metrikte birden geçti: IDF1 %38.2'den %48.4'e çıktı, ID kayması 33'ten 7'ye indi.
+
+## Ekranda görülen bir hatadan kök nedene
+
+Demo videoyu izlerken bir direğin yanındaki kişinin kısa süre görünmez olduktan sonra yeni bir ID aldığını fark ettim. Bunu tek bir örnekte "düzelttim" demek yerine, zinciri adım adım test ettim:
+
+1. **İlişkilendirme algoritması mı?** Takipçi zaten Hungarian kullanıyordu. Değerlendirme betiğindeki açgözlü eşleştiriciyi de Hungarian'a çevirdim; sonuç birebir aynı kaldı. Hipotez elendi.
+2. **Tespit recall'u mu?** Güven eşiğini 0.35'ten 0.15'e kadar taradım. Kare düzeyinde eşleşme oranı %41.6'dan %51.5'e çıktı ama ölçülemeyen olay sayısı hiç değişmedi. Hipotez zayıfladı.
+3. **Metriğin kendisi mi?** Evet. Örtülme sınırını tanımlayan kare, tanım gereği görünürlüğün tam 0.2 eşiğine en yakın olduğu kare. Başarısız 22 olayın hepsinde görünürlük 0.20 ile 0.23 arasındaydı. Yani ölçüm, kişinin en az görünür olduğu anı referans alıyordu.
+
+Bunun bir sekansa özgü olup olmadığını görmek için aynı betiği hiçbir ayarı değiştirmeden 7 sekansın hepsinde çalıştırdım. Bu hata türünün sıklığı, sahnedeki ortalama kalabalıkla güçlü biçimde ilişkili çıktı.
+
+<Figure n={3} caption="Her nokta bir MOT17 sekansı. Kalabalık arttıkça sınır tanımından kaynaklanan hata oranı artıyor (Pearson r = 0.892). Veri: araştırma günlüğü, Faz 3.1.">
+  <CrowdCorrelation />
+</Figure>
+
+Aynı yöntemle ikinci, ayrı bir hata türü de buldum: kişinin 60 kareden uzun süre kısmen görünür kaldığı durumlar. Bunların %88'i tek bir sekansta (MOT17-04) toplanıyordu ve kalabalıkla korelasyonu r = 0.935 çıktı.
+
+## Kendi kodumda bulduğum hatalar
+
+- **685 piksellik sıçrama:** Adaptif ağırlıklar IoU'yu bastırdığında uzak bir kişiyle eşleşme olabiliyordu. Ağırlıklardan bağımsız bir mesafe kapısı ekledim.
+- **Kare hızına kör eşik:** Mesafe kapısını sıkılaştırdığımda bir sekansta sorun çözülmüş görünüyordu. 7 sekansa genişletince toplamda zararlı olduğu çıktı: 14 fps'lik MOT17-05'te MOTA %8.1'den %−10.6'ya düştü. Eşik piksel köşegenine göre ölçekleniyor ama kare hızını hesaba katmıyordu. Kare hızına göre ölçekleyince aynı sekans %+10.1'e çıktı.
+- **Sessiz ikinci eşik:** Takipçinin içindeki `track_thresh` (varsayılan 0.5), betiklerde belirttiğim 0.35'lik güven eşiğini sessizce eziyordu. Bunu bulunca önceki bir fazın rapor ettiğim sayısını da düzelttim.
+- **Kütüphane uyumsuzlukları:** motmetrics'in NumPy 2.0'da kaldırılan `np.asfarray` çağrısı ve torchreid'in PyTorch 2.6'nın yeni `weights_only` varsayılanıyla kendi checkpoint'ini açamaması.
+
+## Önce küçük dene
+
+Bazı fikirleri gerçek koda almadan önce ayrı bir alt sınıfta denedim. Etkin eşleştirmede görünüm galerisini kullanmak ve mesafe kapısını gevşetmek, 38 olayın hiçbirini değiştirmedi. İkisini de ana koda almadım. Sonuç olarak takipçi tarafındaki üç ayar da (Re-ID skoru, mesafe kapısı, güven eşiği) test edilip elendi; kalan hataların çoğu tespitin hiç olmadığı karelerden geliyor.
+
+## Hava görüntüsü: VisDrone
+
+Sistemi drone görüntüsüne taşımayı denediğimde MOTA %0 çıktı. Ham YOLO çıktısını inceledim: COCO ile eğitilmiş model aynı karede araçları görüyor ama 20×30 piksellik insanları hiç görmüyordu.
+
+YOLOv8'i iki yeni VisDrone sahnesiyle `imgsz=1280`'de fine-tune ettim (değerlendirme sahnelerinden ayrı, zamana göre bölünmüş). Yoğun sahnede recall **%15.1'den %68.9'a** çıktı, seyrek sahnede neredeyse hiç değişmedi. Sonra 3 yeni sahneyle gerçek bir train / validation / test ayrımı kurdum. Validasyonda önceden belirlediğim kurala göre seçilen ayar, test sahnelerinde keşif aşamasındaki seçimimden daha kötü çıktı. Bu, keşif sonucunun olduğundan iyi göründüğünü gösteriyordu; raporda böyle yazdım.
+
+## Arayüz
+
+Gradio tabanlı arayüz `main.py`'nin kullandığı sınıfların aynısını çağırıyor: video yükleme, PC kamerası ve RTSP/HTTP IP kamera. Takip edilecek sınıflar seçilebiliyor. Test ederken erişilemeyen bir IP kamerada arayüzün 92 saniye sessizce beklediğini ölçtüm; bağlantı zaman aşımlarını açıkça ayarlayıp bunu 8 saniyeye indirdim.
+
+## Sonuçlar
+
+| Ölçüm | Sonuç |
+|---|---|
+| OSNet Re-ID, Market-1501 | Rank-1 %88.6, mAP %72.0 |
+| MOT17, 5 sekans toplam, adaptif / IoU tabanı | MOTA %24.8 / %24.7, IDF1 %45.0 / %44.0 |
+| Aynı karşılaştırmada ID kayması | 123 / **111**, taban hâlâ önde |
+| Örtülme sonrası kimliği koruma (MOT17-05) | %40.0 – 45.5 |
+| VisDrone, yoğun sahne, fine-tune sonrası recall | %15.1 → %68.9 |
+| Uçtan uca hız, RTX 2080 | ~9 – 11 FPS |
+
+## Sınırlamalar
+
+- Mutlak MOTA (%20 – 31) düşük. Bu proje SOTA doğruluğu değil, bir takip sisteminin neden hata yaptığını ölçerek bulmayı hedefliyor.
+- Gerçek zamanlı değil; gömülü donanım için optimize etmedim.
+- Drone görüntüsündeki ilerleme kısmi ve sahneye özgü. Genellediğini iddia etmiyorum.

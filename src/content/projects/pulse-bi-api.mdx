@@ -1,0 +1,35 @@
+---
+title: "Pulse BI API"
+tagline: "Çok kiracılı olay analitiği API'si; Redis ile önbellek, anlık sayaç ve hız sınırlama."
+summary: "Uygulamaların olay gönderip toplu ve anlık istatistik sorguladığı küçük bir analitik servisi. Redis'i sadece \"kurulu\" olsun diye değil, üç ayrı işi gerçekten taşıyan bir bileşen olarak kullanmak istedim."
+categories: [web]
+order: 17
+period: Ağustos 2026
+year: 2026
+stack: [Node.js, Express, PostgreSQL, Redis, Docker, Jest]
+metrics:
+  - { value: 'O(1)', label: 'anlık sayaç okuması' }
+  - { value: '3', label: 'Redis görevi' }
+---
+
+## Mimari
+
+- **Express** REST API; kayıtlı her uygulama kendi API anahtarıyla kimlik doğruluyor.
+- **PostgreSQL** ham olayların tek doğruluk kaynağı.
+- **Redis** üç ayrı işi yapıyor:
+  1. **Cache-aside toplamlar:** 7 günlük toplama sorgusu pahalı olduğu için sonuç kısa bir süreyle Redis'te tutuluyor. Önbellekte yoksa Postgres'e gidip önbelleği yeniden dolduruyor.
+  2. **Anlık sayaçlar:** Her olay günlük bir anahtara `INCR` yapıyor; "bugün kaç satın alma oldu" sorusu Postgres'e hiç gitmeden tek bir Redis okumasıyla cevaplanıyor.
+  3. **Hız sınırlama:** Olay alma uç noktasında Redis tabanlı sabit pencereli sınırlayıcı.
+
+## API
+
+| Uç nokta | Kimlik | İş |
+|---|---|---|
+| `POST /apps` | yönetici anahtarı | uygulama kaydı, API anahtarı üretir |
+| `POST /events` | API anahtarı, hız sınırlı | olay alımı |
+| `GET /stats` | API anahtarı | 7 günlük toplamlar, önbellekli |
+| `GET /stats/realtime/:eventType` | API anahtarı | bugünün anlık sayacı |
+
+## Test
+
+Servis katmanı (önbellek mantığı, hız sınırlayıcı) Postgres ve Redis'in bellek içi taklitlerine karşı test ediliyor; testler hiçbir altyapı olmadan koşuyor. Henüz bir buluta dağıtılmadı.

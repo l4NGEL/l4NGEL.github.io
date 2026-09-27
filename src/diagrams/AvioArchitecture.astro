@@ -1,0 +1,29 @@
+<svg class="dg" viewBox="0 0 760 300" role="img" aria-label="AvioHMI mimarisi: Java çekirdek, WebSocket ile yer kontrol ve kokpit ekranına yayın, ffmpeg ve CUDA ile HUD, PostGIS kaydı">
+  <defs>
+    <marker id="av-a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L8 4L0 8z" /></marker>
+    <marker id="av-k" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah key" d="M0 0L8 4L0 8z" /></marker>
+  </defs>
+  <rect class="box key" x="250" y="10" width="260" height="182" />
+  <text class="hd" x="264" y="30">Görev bilgisayarı · Java 17</text>
+  <rect class="box" x="264" y="40" width="232" height="36" /><text x="380" y="63" text-anchor="middle">Simülatör ×3 · OpenSky ADS-B</text>
+  <rect class="box" x="264" y="92" width="110" height="36" /><text x="319" y="109" text-anchor="middle">HTTP :8766</text><text class="sm" x="319" y="122" text-anchor="middle">geçmiş · overlay</text>
+  <rect class="box" x="386" y="92" width="110" height="36" /><text x="441" y="109" text-anchor="middle">WS :8765</text><text class="sm" x="441" y="122" text-anchor="middle">canlı telemetri</text>
+  <rect class="box" x="264" y="142" width="110" height="36" /><text x="319" y="165" text-anchor="middle">HUD döngüsü</text>
+  <rect class="box" x="386" y="142" width="110" height="36" /><text x="441" y="165" text-anchor="middle">Kayıt deposu</text>
+  <path class="ln" d="M441 76V90" marker-end="url(#av-a)" />
+
+  <rect class="box" x="580" y="30" width="170" height="46" /><text class="hd" x="665" y="50" text-anchor="middle">Yer kontrol</text><text class="sm" x="665" y="67" text-anchor="middle">React + TS · WebXR</text>
+  <rect class="box" x="580" y="96" width="170" height="46" /><text class="hd" x="665" y="116" text-anchor="middle">Kokpit MFD</text><text class="sm" x="665" y="133" text-anchor="middle">Flutter · PFD/NAV/SYS</text>
+  <path class="ln key" d="M496 104H540V53H578" marker-end="url(#av-k)" />
+  <path class="ln key" d="M496 116H540V119H578" marker-end="url(#av-k)" />
+  <text class="sm" x="544" y="90">JSON</text>
+
+  <rect class="box" x="580" y="240" width="170" height="46" /><text class="hd" x="665" y="260" text-anchor="middle">PostgreSQL</text><text class="sm" x="665" y="277" text-anchor="middle">PostGIS · tekrar oynatma</text>
+  <path class="ln" d="M441 178V263H578" marker-end="url(#av-a)" />
+
+  <rect class="box" x="30" y="240" width="170" height="46" /><text class="hd" x="115" y="260" text-anchor="middle">ffmpeg</text><text class="sm" x="115" y="277" text-anchor="middle">sensör videosu → kare</text>
+  <rect class="box key" x="236" y="240" width="166" height="46" /><text class="hd" x="319" y="260" text-anchor="middle">C++/CUDA Sobel</text><text class="sm" x="319" y="277" text-anchor="middle">JNI · HUD bileşimi</text>
+  <path class="ln" d="M200 263H234" marker-end="url(#av-a)" />
+  <path class="ln key" d="M319 180V238" marker-start="url(#av-k)" marker-end="url(#av-k)" />
+  <text class="sm" x="326" y="214">kare + telemetri ↔ overlay</text>
+</svg>

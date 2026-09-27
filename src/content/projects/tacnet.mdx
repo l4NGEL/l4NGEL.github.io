@@ -1,0 +1,61 @@
+---
+title: "TacNet"
+tagline: "Yer istasyonu ağları için SDN, ağ otomasyonu ve masaüstü operatör konsolu."
+summary: "İHA yer istasyonları arasındaki ağı tek bir yerden yöneten bir platform. SDN kontrolcüsü, C# ile yazılmış bir operatör konsolu, Rust'ta bir MANET simülatörü ve ağ otomasyonu içeriyor. Birim testlerinin ötesinde, üç gerçek yönlendirici konteyneri arasında OSPF komşuluğu kurup doğruladım."
+categories: [sys]
+featured: true
+order: 4
+period: Ağustos 2026
+year: 2026
+stack: [Python, FastAPI, asyncio, C#, .NET 8, WPF, Rust, Docker, FRRouting, Ansible, Netmiko, Paramiko, WireGuard]
+metrics:
+  - { value: '71 / 71', label: 'test, 3 dilde' }
+  - { value: '3', label: 'FRR yönlendirici, canlı OSPF' }
+  - { value: '10', label: 'Docker Compose servisi' }
+diagram: tacnet
+---
+import Figure from '../../components/Figure.astro';
+import TacNetTopology from '../../diagrams/TacNetTopology.astro';
+
+## Ne yapıyor
+
+Sahada birden fazla yer istasyonu olduğunu ve aralarındaki ağın hem yapılandırılması hem de izlenmesi gerektiğini düşündüm. TacNet bu işi katmanlara ayırıyor: yolları hesaplayıp anahtarlara akış kuralı dağıtan bir SDN kontrolcüsü, yönlendiricileri şablondan yapılandıran otomasyon, sürü İHA'ları için MANET yönlendirme simülasyonu ve hepsini tek ekranda toplayan bir operatör konsolu.
+
+<Figure n={1} caption="Topoloji. Turuncu bağlantılar üç yönlendirici konteyneri arasında gerçekten kurulan OSPF komşulukları.">
+  <TacNetTopology />
+</Figure>
+
+## Bileşenler
+
+| Katman | Teknoloji | Ne yapıyor |
+|---|---|---|
+| SDN kontrolcü | Python, FastAPI, asyncio | Dijkstra ile yol hesabı, kendi TCP kontrol protokolüyle akış kurulumu |
+| Operatör konsolu | C#, .NET 8, WPF, MVVM | Topoloji, akışlar, MANET ve MAVLink tek ekranda |
+| MANET motoru | Rust | AODV-lite: RREQ/RREP yayını, rota tablosu, bağlantı kopması; PDR ve gecikme metrikleri |
+| Otomasyon | Jinja2, Ansible, Netmiko, Paramiko | VLAN + OSPF yapılandırması üretimi, SFTP ile dağıtım, yedekleme |
+| VPN | strongSwan, WireGuard | IKEv2/IPsec ve WireGuard yapılandırması, gerçek X25519 anahtarları |
+| Telemetri | pymavlink | MAVLink v1 kodlama ve çözme |
+| İzleme | pysnmp, NetFlow v5 | SNMP v2c sorguları, elle kodlanmış NetFlow toplayıcı |
+| Ağ servisleri | dnsmasq, FreeRADIUS | DNS, DHCP, merkezi kimlik doğrulama |
+
+## Canlı doğrulama
+
+Testler (pytest, cargo test, xUnit) yeşildi ama bunun ağın gerçekten çalıştığını göstermediğini biliyordum. Bu yüzden tüm yığını Docker'da ayağa kaldırıp tek tek denedim:
+
+- Üç FRRouting konteyneri arasında OSPF komşuluğu kuruldu, DR seçimi dahil.
+- Kontrolcü `sw1 → sw2 → sw3` akışını üç gerçek konteynere kurdu; WPF konsolundan canlı olarak yeni bir akış ekledim.
+- Netmiko ile yapılandırma gönderimi ve Paramiko ile yedekleme, gerçek SSH oturumlarıyla çalıştı.
+- dnsmasq'a gerçek DNS sorgusu, bir Linux konteynerinden DHCPDISCOVER / OFFER / ACK, FreeRADIUS'tan doğru şifreye Access-Accept, yanlışa Access-Reject.
+
+## Canlı testin bulduğu hatalar
+
+- Anahtar ajanları kontrolcü hazır olmadan başlayıp çöküyordu. Yeniden deneme döngüsü ve sağlık kontrolüne bağlı başlatma ekledim.
+- Yönlendirici konteynerinde zebra `CAP_SYS_ADMIN` olmadan çalışmıyordu.
+- Netmiko'da çok satırlı yapılandırmayı heredoc ile göndermek yanlış yaklaşımdı; alttaki Paramiko oturumu üzerinden SFTP ile dosya yükleyip `vtysh -f` ile uygulamaya geçtim.
+- DNS/DHCP konteynerinin statik IP'si Docker'ın otomatik adres aralığıyla çakışıyordu; otomatik aralığı daraltıp statik adresleri dışına aldım.
+
+## Neyi doğrulayamadım
+
+- Ansible CLI native Windows'ta çalışmıyor; playbook'ları çalıştıramadım. Aynı yapılandırma mantığı Netmiko / Paramiko ile canlı test edildi.
+- VLAN alt arayüzleri yapılandırmada var ama çekirdekte canlı değil; konteynerlerin tek ağ arayüzü var.
+- VPN tüneli için canlı el sıkışma ve Kubernetes manifestleri için gerçek bir küme testi yapmadım.

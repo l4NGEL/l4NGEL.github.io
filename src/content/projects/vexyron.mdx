@@ -1,0 +1,52 @@
+---
+title: "VEXYRON"
+tagline: "Kasıtlı açıklı bir hedef ve onu tarayıp \"yayına hazır mı\" kararı veren güvenlik aracı."
+summary: "Bir uygulamayı yayına almadan önce güvenlik, ayakta mı kontrolü ve yük testi yapıp kanıtlı, tekrarlanabilir bir karar veren tarayıcı. Tarayıcıyı test etmek için içine 22 açığı bilerek yerleştirdiğim bir hedef uygulama da yazdım."
+categories: [sec]
+order: 13
+period: Ağustos 2026
+year: 2026
+stack: [Python, Flask, requests, androguard, HTML/PDF raporlama]
+metrics:
+  - { value: '22 / 22', label: 'yerleştirilmiş açık tespit edildi' }
+  - { value: '12 + 5 + 5', label: 'web, API, mobil APK' }
+  - { value: '3', label: 'karar seviyesi, CI çıkış kodu' }
+repo: https://github.com/l4NGEL/VEXYRON
+cover:
+  src: /images/vexyron/results.webp
+  alt: Tarama sonucu; "production'a hazır değil" kararı ve kanıtlı bulgular
+---
+import Figure from '../../components/Figure.astro';
+
+## İki parça
+
+- **Hedef:** Bilerek açık bırakılmış bir web uygulaması, bir mobil backend API ve örnek bir APK. Toplam 22 açık: 12 web, 5 API, 5 mobil statik analiz.
+- **Tarayıcı:** Web (OWASP Top 10 türü), API, APK statik analizi, port taraması, smoke testi ve yük testi yapıp tüm bulguları tek bir karara bağlıyor.
+
+Son uçtan uca çalıştırmada tarayıcı 22 açığın 22'sini de otomatik olarak buldu.
+
+## Karar
+
+| Durum | Anlamı | Çıkış kodu |
+|---|---|---|
+| Yayına hazır değil | En az bir kritik ya da yüksek bulgu | 1 |
+| Uyarılarla hazır | Yalnızca orta seviye bulgular | 0 |
+| Yayına hazır | Yalnızca düşük / bilgi ya da hiç bulgu yok | 0 |
+
+Sıfırdan farklı çıkış kodu sayesinde araç bir CI hattında "yayına almadan önce çalıştır, kırmızıysa dur" kapısı olarak kullanılabiliyor. Her bulgu, iddiayı kanıtlayan somut bir `evidence` alanı taşıyor: gönderilen yük ve alınan yanıt.
+
+## Yanlış pozitiflerle mücadele
+
+- **Soft-404 referansı:** Taramaya başlamadan önce kesinlikle var olmayan rastgele bir yola istek atıp referans yanıtı kaydediyorum. Her bilinmeyen yola 200 döndüren tek sayfalık uygulamalarda, "gizli dosya bulundu" gibi sahte bulguların önüne böyle geçiliyor.
+- **Kontrol grubu:** Hedefe `/admin` ile birebir aynı görünen ama gerçekten korunan bir `/admin-secure` ekledim. Tarayıcı birincisini işaretleyip ikincisini işaretlemiyorsa gerçekten ayrım yapıyor demektir; içinde "admin" geçen her yolu körü körüne işaretlemiyor.
+- **Bulgu kabulü:** Her bulgunun taramalar arasında sabit bir kimliği var. İncelenen bir bulgu gerekçesiyle "kabul edilmiş risk" ya da "yanlış pozitif" olarak işaretlenebiliyor; rapordan kaybolmuyor, sadece karar hesabından çıkıyor. Gerekçesi boş bir kayıt kabul edilmiyor.
+
+## Yük testi
+
+İsteğe bağlı ve varsayılan olarak kapalı. Aşamalı yük, p50 / p95 / p99 gecikme, hata oranı ve geçti / kaldı eşikleri destekliyor. Yanlış kullanılırsa gerçek bir servis dışı bırakma saldırısına dönüşebileceği için sert üst sınırları var: en fazla 200 eşzamanlı istek, 120 saniye ve 5 aşama. Hedef yol 404 dönüyorsa yükü hiç başlatmıyor; yanıltıcı bir "%100 hata" sonucu yerine "yol yanlış" diyor.
+
+<Figure n={2} src="/images/vexyron/scan.webp" caption="Tarama ekranı; hedef, kimlik bilgileri ve kapsam seçenekleri" bare />
+
+## Güvenlik sınırı
+
+Tarayıcı varsayılan olarak yalnızca localhost ve özel ağ adreslerine izin veriyor. Başka bir hedef için açık bir yetki bayrağı gerekiyor. Yerel ve tek kullanıcılı bir araç: bulut hesabı, telemetri ya da harici API çağrısı yok.

@@ -1,81 +1,122 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import ProjectCard from '../components/ProjectCard.astro';
+import Figure from '../components/Figure.astro';
+import Metrics from '../components/Metrics.astro';
+import { DIAGRAMS } from '../diagrams';
 import { CATEGORIES, type Category } from '../categories';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const featured = projects.filter((p) => p.data.featured);
-const rest = projects.filter((p) => !p.data.featured);
 const count = (c: Category) => projects.filter((p) => p.data.categories.includes(c)).length;
+const pad = (n: number) => String(n).padStart(2, '0');
 ---
 <Base
-  title="Beyza Nur Kılıç — Bilgisayar Mühendisi"
-  description="Bilgisayarlı görü, yapay zekâ, savunma/sistem yazılımı ve full-stack projeleri."
+  title="Beyza Nur Kılıç · Bilgisayar Mühendisi"
+  description="Bilgisayarlı görü, yapay zekâ, savunma ve sistem yazılımı üzerine projeler."
   image="/images/autotrack/demo.webp"
 >
-  <header class="hero">
+  <main>
+    <section class="masthead">
+      <div class="wrap">
+        <h1>Beyza Nur<br />Kılıç<span class="dot">.</span></h1>
+        <div class="intro">
+          <div>
+            <p class="label">Şu an</p>
+            <p>Papilon Savunma'da junior full-stack geliştirici. Bursa Uludağ Üniversitesi Bilgisayar Mühendisliği mezunu, Ankara'da.</p>
+          </div>
+          <div>
+            <p class="label">Ne yapıyorum</p>
+            <p class="lead">
+              Kameradan gelen görüntüyü anlamlandıran görü sistemleri, sahada internetsiz çalışan modeller ve
+              bunları kullanan operatör arayüzleri geliştiriyorum. Bir şeyin çalıştığını söylemeden önce ölçüyorum;{" "}
+              <em>ölçüm beklediğim gibi çıkmadığında da onu yazıyorum.</em>
+            </p>
+          </div>
+          <div>
+            <p class="label">Bağlantılar</p>
+            <ul class="linklist">
+              <li><a href="mailto:byznrklc01@gmail.com">E-posta</a></li>
+              <li><a href="https://github.com/l4NGEL" rel="noopener">GitHub</a></li>
+              <li><a href="https://www.linkedin.com/in/beyza-nur-kili%C3%A7/" rel="noopener">LinkedIn</a></li>
+              <li><a href="/hakkimda">Özgeçmiş</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <div class="wrap">
-      <h1><span class="bracket">Beyza Nur Kılıç</span></h1>
-      <p class="role">Bilgisayar Mühendisi — bilgisayarlı görü, yapay zekâ ve sistem yazılımı</p>
-      <p class="lede">
-        Algılamadan karar desteğine uzanan uçtan uca sistemler kuruyorum: C++/CUDA görü hatları, çoklu hedef
-        takibi, LLM/RAG ve konuşma tanıma modelleri, .NET/WPF operatör arayüzleri ve bunları besleyen backend
-        servisleri. Her projede sonuçları önceden belirlenmiş ölçütlerle ölçüp, tutmayanları da raporluyorum.
-      </p>
-      <div class="contact">
-        <a href="mailto:byznrklc01@gmail.com">byznrklc01@gmail.com</a>
-        <a href="https://github.com/l4NGEL" rel="noopener">github.com/l4NGEL</a>
-        <a href="https://www.linkedin.com/in/beyza-nur-kili%C3%A7/" rel="noopener">LinkedIn</a>
+      <div class="shead">
+        <h2><span>01</span>Seçili çalışmalar</h2>
+        <span class="label">{featured.length} proje</span>
       </div>
-      <div class="meta">
-        <span>Ankara</span>
-        <span>Papilon Savunma — Junior Full-Stack Developer</span>
-        <span>Bursa Uludağ Üni. Bilgisayar Müh.</span>
+
+      {featured.map((p, i) => {
+        const d = p.data;
+        const Diagram = d.diagram ? DIAGRAMS[d.diagram as keyof typeof DIAGRAMS] : undefined;
+        return (
+          <article class:list={['work', { flip: i % 2 === 1 }]}>
+            <div class="work-text">
+              <span class="work-no">{pad(d.order)} / {d.categories.map((c) => CATEGORIES[c]).join(' · ')}</span>
+              <h3><a href={`/projeler/${p.id}`}>{d.title}</a></h3>
+              <p class="sum">{d.summary}</p>
+              <dl class="facts">
+                <dt>Dönem</dt><dd>{d.period}</dd>
+                <dt>Teknoloji</dt><dd>{d.stack.slice(0, 6).join(', ')}</dd>
+                <dt>Kod</dt><dd>{d.repo ? 'GitHub, açık' : 'Talep üzerine'}</dd>
+              </dl>
+              <a class="readmore" href={`/projeler/${p.id}`}>Vaka çalışmasını oku</a>
+            </div>
+            <div>
+              {Diagram ? (
+                <Figure caption={d.tagline}><Diagram /></Figure>
+              ) : d.cover ? (
+                <Figure src={d.cover.src} alt={d.cover.alt} caption={d.cover.alt} bare />
+              ) : null}
+              <Metrics items={d.metrics} />
+            </div>
+          </article>
+        );
+      })}
+
+      <div class="shead">
+        <h2><span>02</span>Tüm projeler</h2>
+        <span class="label">{projects.length} proje</span>
       </div>
+      <div class="filters" id="filters" role="group" aria-label="Alana göre filtrele">
+        <button type="button" data-f="all" aria-pressed="true">Tümü<sup>{projects.length}</sup></button>
+        {(Object.keys(CATEGORIES) as Category[]).map((c) => (
+          <button type="button" data-f={c} aria-pressed="false">{CATEGORIES[c]}<sup>{count(c)}</sup></button>
+        ))}
+      </div>
+      <ol class="index">
+        {projects.map((p) => (
+          <li data-cat={p.data.categories.join(' ')}>
+            <a class="row" href={`/projeler/${p.id}`}>
+              <span class="n">{pad(p.data.order)}</span>
+              <span class="t">{p.data.title}</span>
+              <span class="d">{p.data.tagline}</span>
+              <span class="m">
+                {p.data.status ? <span class="tag-status">{p.data.status}</span> : p.data.year}
+                {' · '}{p.data.repo ? 'açık kaynak' : 'özel repo'}
+              </span>
+              <span class="arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+        ))}
+      </ol>
     </div>
-  </header>
-
-  <nav class="bar" aria-label="Proje filtresi">
-    <div class="wrap filters" id="filters" style="padding-left:20px;padding-right:20px">
-      <button type="button" data-f="all" aria-pressed="true">Tümü<span class="n">{projects.length}</span></button>
-      {(Object.keys(CATEGORIES) as Category[]).map((c) => (
-        <button type="button" data-f={c} aria-pressed="false">
-          {CATEGORIES[c]}<span class="n">{count(c)}</span>
-        </button>
-      ))}
-    </div>
-  </nav>
-
-  <main class="wrap">
-    <section>
-      <h2>Öne çıkanlar</h2>
-      <p class="sub">En kapsamlı ve en sıkı doğrulanmış projeler.</p>
-      <div class="grid featured">
-        {featured.map((p) => <ProjectCard project={p} />)}
-      </div>
-    </section>
-
-    <section>
-      <h2>Diğer projeler</h2>
-      <p class="sub">Durum etiketi olmayanlar tamamlanmış ve çalıştırılmış projelerdir. Karta tıklayınca detay sayfası açılır.</p>
-      <div class="grid">
-        {rest.map((p) => <ProjectCard project={p} />)}
-      </div>
-    </section>
   </main>
 
   <script>
-    const cards = [...document.querySelectorAll<HTMLElement>('.card')];
+    const rows = [...document.querySelectorAll<HTMLElement>('.index li')];
     const btns = [...document.querySelectorAll<HTMLButtonElement>('#filters button')];
     for (const b of btns) {
       b.addEventListener('click', () => {
         const f = b.dataset.f!;
         btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-        cards.forEach((c) => (c.hidden = f !== 'all' && !c.dataset.cat!.split(' ').includes(f)));
-        document.querySelectorAll<HTMLElement>('main section').forEach((s) => {
-          s.hidden = ![...s.querySelectorAll<HTMLElement>('.card')].some((c) => !c.hidden);
-        });
+        rows.forEach((r) => (r.hidden = f !== 'all' && !r.dataset.cat!.split(' ').includes(f)));
       });
     }
   </script>

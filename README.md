@@ -16,12 +16,12 @@ npm run build     # dist/ altına statik çıktı
 src/
   content/projects/*.mdx   her proje bir dosya: frontmatter + vaka çalışması metni
   diagrams/*.astro         elle çizilmiş SVG şemalar (tema renklerini kullanır)
-  components/              Figure, Table
-  pages/index.astro        ana sayfa: giriş + konu başlıklarına göre proje listesi
-  pages/projeler/[slug]    proje sayfaları (otomatik üretilir)
+  components/              Figure (numaralı şekil), Metrics, Table
+  pages/index.astro        ana sayfa: seçili çalışmalar + filtreli proje dizini
+  pages/projeler/[slug]    proje sayfaları (otomatik üretilir, içindekiler menüsüyle)
   pages/hakkimda.astro     deneyim, eğitim, beceriler
   layouts/Base.astro       ortak şablon
-  styles/global.css        tasarım: tek sütun, Source Serif 4
+  styles/global.css        tasarım: Source Serif 4 + Source Sans 3 + Source Code Pro
 public/images/             ekran görüntüleri (webp)
 ```
 
@@ -33,20 +33,28 @@ public/images/             ekran görüntüleri (webp)
 ```yaml
 ---
 title: "Proje adı"
-description: "Listede görünen bir iki cümle"
-group: goru            # goru, sistem, ses-dil, web (src/categories.ts)
-order: 18              # sıralama
-date: "Eki 2026"
+tagline: "Dizinde görünen tek satırlık açıklama"
+summary: "Proje sayfasının ve seçili çalışmalar bloğunun giriş paragrafı"
+categories: [cv, ai, sys, web, sec]
+featured: false          # true ise ana sayfada büyük blok olarak
+order: 18
+period: Ekim 2026
+year: 2026
+status: geliştiriliyor   # opsiyonel
 stack: [Python, ...]
+metrics:                 # opsiyonel, büyük rakamlar
+  - { value: '%90', label: 'açıklama' }
 repo: https://github.com/...   # opsiyonel
-thumb: /images/x/y.webp        # opsiyonel, listede sağda küçük görsel
-wip: true                      # opsiyonel, "devam ediyor"
+cover: { src: /images/x/y.webp, alt: Şekil açıklaması }   # opsiyonel
+diagram: autotrack       # opsiyonel; ana sayfada kapak yerine şema (src/diagrams/index.ts)
 ---
 import Figure from '../../components/Figure.astro';
 
-Metin...
+## Başlık
 
-<Figure src="/images/x/z.webp" caption="Açıklama" />
+Metin... Görsel için:
+
+<Figure n={2} src="/images/x/z.webp" caption="Açıklama" bare />
 ```
 
 ## Yayınlama

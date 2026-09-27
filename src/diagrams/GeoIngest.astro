@@ -15,7 +15,7 @@ const x = (i: number) => 10 + i * 128;
   </defs>
   {steps.map(([t, a, b], i) => (
     <>
-      <text class="sm" x={x(i)} y="30" style="fill:var(--signal)">{String(i + 1).padStart(2, '0')}</text>
+      <text class="sm" x={x(i)} y="30" style="fill:var(--accent)">{String(i + 1).padStart(2, '0')}</text>
       <rect class:list={['box', { key: i === 4 }]} x={x(i)} y="38" width="112" height="74" />
       <text class="hd" x={x(i) + 10} y="60">{t}</text>
       <text class="sm" x={x(i) + 10} y="82">{a}</text>

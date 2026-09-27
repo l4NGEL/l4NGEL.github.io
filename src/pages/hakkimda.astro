@@ -1,46 +1,75 @@
 ---
 import Base from '../layouts/Base.astro';
+
+const skills = [
+  ['Diller', 'Python, C++17, C#, Java, TypeScript, Rust, Dart, SQL'],
+  ['Görü ve ML', 'PyTorch, YOLOv8, OSNet Re-ID, OpenCV, ONNX Runtime, CUDA, Whisper, Transformers, PEFT/QLoRA, DPO, scikit-learn'],
+  ['Sistem ve ağ', 'WPF/MVVM, ASP.NET Core, SignalR, ROS2, MQTT, Protobuf, FRRouting/OSPF, SDN, MAVLink, SNMP, NetFlow'],
+  ['Web ve mobil', 'React, React Native/Expo, Flutter, Node.js, FastAPI, PostgreSQL/PostGIS, Redis, Firebase'],
+  ['Altyapı', 'Docker, GitHub Actions, GitLab CI, Jenkins, Testcontainers, MLflow, Linux'],
+];
 ---
-<Base title="Hakkımda · Beyza Nur Kılıç" description="Beyza Nur Kılıç: deneyim, eğitim ve kullandığım teknolojiler.">
-  <main>
-    <h1>Hakkımda</h1>
-    <p>
-      2025'te Bursa Uludağ Üniversitesi Bilgisayar Mühendisliği'nden mezun oldum. Papilon Savunma'ya
-      stajyer olarak başladım, Ekim 2025'ten beri aynı yerde junior full-stack developer olarak çalışıyorum.
-    </p>
-    <p>
-      İş dışındaki projelerimde bir şeyi bitti saymadan önce ölçmeye çalışıyorum. Çoğu zaman ilk sonuç
-      beklediğim gibi çıkmıyor; o zaman nedenini bulmaya uğraşıyorum. AutoTrack'teki notların çoğu böyle çıktı.
-    </p>
+<Base title="Hakkımda · Beyza Nur Kılıç" description="Beyza Nur Kılıç: deneyim, eğitim ve teknik beceriler.">
+  <main class="wrap">
+    <header class="p-top">
+      <p class="crumb">Özgeçmiş</p>
+      <h1 class="p-title">Hakkımda</h1>
+      <div class="p-lead">
+        <p class="lead">
+          Bilgisayar mühendisiyim. Gün içinde Papilon Savunma'da web, mobil ve backend tarafında çalışıyorum;
+          geri kalan zamanımda bilgisayarlı görü, konuşma ve dil modelleri, ağ ve operatör yazılımları üzerine
+          uçtan uca projeler geliştiriyorum.
+        </p>
+        <dl class="facts">
+          <dt>Konum</dt><dd>Ankara</dd>
+          <dt>Diller</dt><dd>Türkçe (ana dil), İngilizce (B2), Almanca (A1)</dd>
+          <dt>E-posta</dt><dd><a href="mailto:byznrklc01@gmail.com">byznrklc01@gmail.com</a></dd>
+        </dl>
+      </div>
+    </header>
 
-    <h2>Deneyim</h2>
-    <ul>
-      <li><b>Junior Full-Stack Developer</b>, Papilon Savunma Teknolojileri, Ankara <small>(Ekim 2025, devam)</small></li>
-      <li><b>Yazılım Geliştirme Stajyeri</b>, Papilon Savunma Teknolojileri, Ankara <small>(Temmuz – Eylül 2025)</small></li>
+    <div class="shead"><h2>Deneyim</h2></div>
+    <ul class="cv-list">
+      <li>
+        <span class="when">Eki 2025 · bugün</span>
+        <div><b>Junior Full-Stack Developer</b><p>Papilon Savunma Teknolojileri, Ankara</p></div>
+      </li>
+      <li>
+        <span class="when">Tem 2025 · Eyl 2025</span>
+        <div><b>Yazılım Geliştirme Stajyeri</b><p>Papilon Savunma Teknolojileri, Ankara</p></div>
+      </li>
     </ul>
 
-    <h2>Eğitim</h2>
-    <ul>
-      <li><b>Bilgisayar Mühendisliği</b>, Bursa Uludağ Üniversitesi <small>(2021 – 2025, GPA 3.40)</small></li>
+    <div class="shead"><h2>Eğitim</h2></div>
+    <ul class="cv-list">
+      <li>
+        <span class="when">2021 · 2025</span>
+        <div><b>Bilgisayar Mühendisliği, Lisans</b><p>Bursa Uludağ Üniversitesi · GPA 3.40 / 4.00</p></div>
+      </li>
     </ul>
 
-    <h2>Kullandıklarım</h2>
-    <ul>
-      <li><b>Diller:</b> Python, C++17, C#, Java, TypeScript, Rust, Dart, SQL</li>
-      <li><b>Görüntü ve ML:</b> PyTorch, YOLOv8, OSNet, OpenCV, ONNX Runtime, CUDA, Whisper, Transformers, QLoRA, DPO, scikit-learn</li>
-      <li><b>Sistem ve ağ:</b> WPF, ASP.NET Core, SignalR, ROS2, MQTT, Protobuf, FRRouting / OSPF, MAVLink</li>
-      <li><b>Web ve mobil:</b> React, React Native, Flutter, Node.js, FastAPI, PostgreSQL / PostGIS, Redis, Firebase</li>
-      <li><b>Araçlar:</b> Docker, GitHub Actions, GitLab CI, Jenkins, Testcontainers, MLflow, Linux</li>
+    <div class="shead"><h2>Nasıl çalışıyorum</h2></div>
+    <div class="cols" style="margin-top:24px">
+      <p class="label">Kısaca</p>
+      <div class="prose">
+        <p>
+          Bir sonucu kabul etmeden önce, onu üretmemiş veriyle yeniden ölçüyorum. AutoTrack'te bir düzeltme tek
+          sekansta işe yarıyor gibi görünüyordu; yedi sekansa genişletince toplamda zarar verdiği ortaya çıktı ve
+          sebebini (kare hızına kör bir mesafe eşiği) bulup düzelttim. Stereo 3D MOT'ta hedefleri baştan yazdım,
+          çoğu tutmadı ve rapor bunu söylüyor.
+        </p>
+        <p>
+          Bir fikri gerçek koda almadan önce küçük ve izole bir deneyde deniyorum. Ölçüm araçlarımın kendisinde de
+          hata arıyorum: projelerimdeki en öğretici hataların birkaçı, değerlendirme betiklerinin içindeydi.
+        </p>
+      </div>
+    </div>
+
+    <div class="shead"><h2>Teknik beceriler</h2></div>
+    <ul class="cv-list">
+      {skills.map(([k, v]) => (
+        <li><span class="when">{k}</span><div><p style="margin:0;color:var(--ink)">{v}</p></div></li>
+      ))}
     </ul>
-
-    <h2>Diller</h2>
-    <p>Türkçe, İngilizce (B2), Almanca (A1).</p>
-
-    <h2>İletişim</h2>
-    <p>
-      En kolay e-postayla ulaşırsınız: <a href="mailto:byznrklc01@gmail.com">byznrklc01@gmail.com</a>.
-      Ayrıca <a href="https://www.linkedin.com/in/beyza-nur-kili%C3%A7/" rel="noopener">LinkedIn</a> ve
-      <a href="https://github.com/l4NGEL" rel="noopener">GitHub</a>.
-    </p>
   </main>
 </Base>

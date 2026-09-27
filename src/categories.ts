@@ -1,8 +1,9 @@
-export const GROUPS = {
-  goru: 'Görüntü işleme ve takip',
-  sistem: 'Sistem ve savunma yazılımı',
-  'ses-dil': 'Ses, sinyal ve dil modelleri',
-  web: 'Web, mobil ve güvenlik',
+export const CATEGORIES = {
+  cv: 'Bilgisayarlı Görü',
+  ai: 'Yapay Zekâ / ML',
+  sys: 'Savunma & Sistem',
+  web: 'Full-Stack & Mobil',
+  sec: 'Güvenlik',
 } as const;
 
-export type Group = keyof typeof GROUPS;
+export type Category = keyof typeof CATEGORIES;

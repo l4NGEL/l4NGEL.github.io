@@ -1,16 +1,34 @@
 ---
 title: "SahaDenetim"
-description: "İnternet olmayan sahada varlık denetimi yapmak için mobil uygulama. Teknisyen dolduruyor, süpervizör onaylıyor."
-group: web
+tagline: "İnternetin olmadığı sahada varlık denetimi; rol bazlı onay ve karar geçmişi."
+summary: "Trafo merkezi, pompa istasyonu ya da ATM gibi varlıkları denetleyen saha ekipleri için bir mobil uygulama. Teknisyen bağlantı olmadan denetimi dolduruyor, süpervizör onaylıyor ya da reddediyor, her karar geçmişe yazılıyor."
+categories: [web]
 order: 15
-date: "Ağu 2026"
-stack: [React Native, Expo, TypeScript, Firestore, EAS]
+period: Ağustos 2026
+year: 2026
+stack: [React Native, Expo SDK 54, TypeScript, Redux Toolkit, Firebase Firestore, NetInfo, Jest, EAS Build, GitHub Actions]
+metrics:
+  - { value: '14', label: 'test, çakışma senaryosu dahil' }
+  - { value: '2', label: 'rol: teknisyen, süpervizör' }
 ---
 
-Trafo merkezi, pompa istasyonu, ATM gibi yerleri denetleyen saha ekipleri için bir uygulama. Bu yerlerde çoğu zaman internet olmuyor.
+## Problem
 
-Teknisyen denetimi sahada dolduruyor: varlık kimliği, kontrol listesi, fotoğraf, konum. Bağlantı yoksa kayıt kuyrukta bekliyor, bağlantı gelince gidiyor. Süpervizör denetimi açıp onaylıyor ya da notla reddediyor; her karar kim, ne zaman bilgisiyle geçmişe yazılıyor.
+Enerji, bankacılık ve ulaştırma gibi sektörlerde saha ekipleri çoğu zaman internetin olmadığı yerlerde çalışıyor. Denetim formunu ancak ofise dönünce doldurmak hem gecikmeye hem veri kaybına yol açıyor.
 
-Senkron tarafı [SyncLedger](/projeler/syncledger)'daki yapının aynısı: outbox kuyruğu, `onSnapshot` ile dinleme, `version` alanıyla çakışma kontrolü. Böylece iki süpervizör aynı denetime aynı anda karar verirse biri diğerini sessizce ezmiyor.
+## Akış
 
-TypeScript strict modda, çakışma senaryosu dahil 14 test var. GitHub Actions her push'ta tip kontrolü ve testleri koşuyor, build'ler EAS ile alınıyor.
+1. Teknisyen yeni bir denetim açıyor: varlık kimliği, kategori, geçti / kaldı kontrol listesi, fotoğraf ve konum.
+2. Bağlantı yoksa denetim "bekliyor" durumunda kuyrukta kalıyor; bağlantı gelince kendiliğinden gönderiliyor.
+3. Süpervizör incelemedeki denetimi açıp kontrol listesine, fotoğrafa ve geçmişe bakıyor, notla birlikte onaylıyor ya da reddediyor.
+4. Her karar kimin, ne zaman, neye karar verdiğiyle birlikte geçmişe yazılıyor.
+
+## Mimari
+
+SyncLedger'da kurduğum senkron modelini burada kurumsal bir iş akışına uyguladım: outbox kuyruğuyla gönderim, `onSnapshot` ile gerçek zamanlı alım, `version` alanıyla transaction içinde iyimser eşzamanlılık kontrolü. Böylece sahadaki iki süpervizör aynı denetime aynı anda karar verirse bu sessizce ezilmiyor, çakışma olarak ortaya çıkıyor.
+
+Kamera ve konum için `expo-image-picker` ve `expo-location`, bağlantı durumunu gerçek zamanlı algılamak için NetInfo kullanıyorum.
+
+## Kalite ve dağıtım
+
+TypeScript strict modda. Her push'ta GitHub Actions tip kontrolü ve testleri koşuyor. EAS Build'de geliştirme, önizleme (APK) ve yayın profilleri tanımlı.

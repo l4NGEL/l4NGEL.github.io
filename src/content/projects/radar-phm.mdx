@@ -1,39 +1,60 @@
 ---
-title: "Radar T/R modül PHM"
-description: "AESA radar T/R modüllerinin BIT telemetrisinde arıza tespiti, teşhis ve kalan ömür tahmini. Üç yöntemi aynı veride karşılaştırdım."
-group: sistem
-order: 6
-date: "Ağu 2026"
+title: "Radar T/R Modül PHM"
+tagline: "AESA radar T/R modülleri için arıza tespiti, teşhis ve kestirimci bakım."
+summary: "Faz dizili bir radarın verici-alıcı modüllerinden gelen yerleşik test (BIT) telemetrisinde arızayı yakalayan, hangi arıza olduğunu söyleyen, geçici gürültüyü yanlış alarmdan ayıran ve kalan ömrü tahmin eden bir hat. Üç tespit yöntemini aynı veride karşılaştırıp hangisinin ne zaman tercih edileceğini gerekçelendirdim."
+categories: [ai, sys]
+order: 7
+period: Ağustos 2026
+year: 2026
 stack: [Python, scikit-learn, pandas, Streamlit, MATLAB]
+metrics:
+  - { value: '%93.3', label: 'arıza tespit kapsamı' }
+  - { value: '%0.9', label: 'yanlış alarm oranı' }
+  - { value: '%96.8', label: 'arıza izolasyon doğruluğu' }
 ---
 
-Faz dizili bir radarın verici-alıcı (T/R) modüllerinden gelen built-in test telemetrisi üzerinde çalışan bir PHM hattı: arızayı yakalıyor, hangi arıza olduğunu söylüyor, geçici gürültüyü gerçek arızadan ayırmaya çalışıyor ve kademeli arızalarda kalan ömrü tahmin ediyor.
+## Veri
 
-Veri sentetik. 40 modül, 6 kanal ve 4 arıza modu (güç yükselteci bozulması, konnektör arızası, termal arıza, osilatör kayması) için ürettim; değerleri genel T/R modülü literatüründen aldım.
+40 modül, 6 telemetri kanalı ve 4 arıza modu için sentetik BIT telemetrisi ürettim. Arıza modları gerçek T/R modülü literatüründen esinlendi; gizli ya da tescilli hiçbir veri kullanmadım.
 
-## Tespit
-
-Test setinde 12 modül, 4.800 örnek var:
-
-| Yöntem | Tespit | Yanlış alarm |
+| Arıza modu | Karakter | Nasıl yakalanıyor |
 |---|---|---|
-| Kural tabanlı, \|z\| > 3 | %91.5 | %1.2 |
-| IsolationForest | %86.3 | %7.6 |
-| Random Forest | %93.3 | %0.9 |
+| Güç yükselteci bozulması | kademeli | kazanç / güç eğilimi + kalan ömür |
+| Konnektör arızası | ani | VSWR / güç eşik aşımı |
+| Termal arıza | kademeli, zincirleme | sıcaklık eğilimi, kazanca yansıması |
+| Osilatör kayması | kademeli | faz gürültüsü eğilimi + kalan ömür |
+| Geçici sensör gürültüsü | arıza değil | yanlış alarm sınıflandırıcısı bastırıyor |
 
-Random Forest en iyisi ama etiketli arıza geçmişi istiyor. IsolationForest etiket istemiyor ama 6 kat daha fazla yanlış alarm veriyor. Gerçek bir sistemde ikisini birlikte kullanırdım: bilinen arızalar için RF, yeni tipler için IsolationForest.
+## Kararlar
 
-4 sınıflı teşhiste doğruluk %96.8. Karışan tek çift osilatör kayması ile termal arıza; ikisi de yavaş başladığı için erken evrede benziyorlar.
+- **Modül bazlı bölme:** Bir modülün tüm zaman serisi ya eğitimde ya testte. Arıza başına yalnızca 5 modül olduğu için ayrıca arıza moduna göre katmanlandırdım; yoksa bazı arıza tipleri testten tamamen dışarıda kalabiliyordu.
+- **Eşikler yalnızca sağlam veriden:** Nominal eşikleri sadece sağlıklı eğitim örneklerinden türettim; arıza verisi kalibrasyona karışmıyor.
+- **Kalan ömür için basit model:** Gerçek arıza ömrü verisi olmadan karmaşık bir hayatta kalma modeli aşırı uyum riski taşır. Doğrusal eğilim ekstrapolasyonu kullandım.
+- **Ani arızada kalan ömür yok:** Konnektör arızasının öncü belirtisi olmadığı için kalan ömür hesaplamıyorum ve bunu açıkça belgeledim.
 
-## Birkaç karar
+## Tespit: üç yöntem
 
-- Train / test ayrımını modül bazında yaptım, yani bir modülün tüm zaman serisi tek tarafta. Arıza tipi başına sadece 5 modül olduğundan ayrıca arıza tipine göre stratify ettim, yoksa bazı tipler test'e hiç düşmeyebiliyordu.
-- Normal eşikleri sadece sağlam modüllerden hesapladım.
-- Kalan ömür için doğrusal trend kullandım; gerçek ömür verisi olmadan daha karmaşık bir model overfit ederdi. 4 test modülünde ortalama hata 4.7 örnek.
-- Konnektör arızası ani olduğu için onda kalan ömür hesaplamıyorum.
+Test bölmesi, 12 modül ve 4.800 örnek:
 
-## Zayıf nokta
+| Yöntem | Tespit kapsamı | Yanlış alarm | Geçici sıçrama yakalama | Tespite kadar örnek |
+|---|---|---|---|---|
+| Kural tabanlı, \|z\| > 3 | %91.5 | %1.2 | %81.8 | 14.2 |
+| IsolationForest, denetimsiz | %86.3 | %7.6 | %36.4 | 7.3 |
+| **Random Forest, denetimli** | **%93.3** | **%0.9** | **%90.9** | 12.3 |
 
-Yanlış alarm sınıflandırıcısı geçici sıçramaların hepsini bastırıyor ama bazı gerçek arızaları da yanlış alarm sanıyor (gerçek arıza sınıfında F1 %54.5). Set küçük ve dengesiz: 51 olaydan sadece 16'sı gerçek arıza. Bunun doğru ayarı, kaçırılan arıza ile gereksiz bakımın maliyetine bağlı bir eşik kararı; dashboard'da olasılığı bu yüzden gösteriyorum.
+Random Forest en iyi sonucu veriyor ama etiketli arıza geçmişi istiyor. IsolationForest etiket istemiyor ama yanlış alarmı 6 kat daha fazla. Gerçek bir sistemde ikisini birlikte kullanırdım: bilinen arızalar için Random Forest, yeni ve bilinmeyen arıza tipleri için IsolationForest.
 
-MATLAB tarafı küçük bir simülasyon scripti, Simulink kullanmadım.
+## Teşhis
+
+4 sınıfta **%96.8 izolasyon doğruluğu** (1.384 test örneği). Tek karışıklık osilatör kayması ile termal arıza arasında; ikisi de yavaş başlayan arızalar olduğu için erken evrede birbirine benzemeleri beklenen bir durum.
+
+## Yanlış alarm ve kalan ömür
+
+Yanlış alarm sınıflandırıcısı geçici sıçramaların %100'ünü bastırıyor, ama bunun bedeli bazı gerçek arızaları da yanlış alarm sanması (gerçek arıza sınıfında F1 %54.5). 51 olaydan yalnızca 16'sı gerçek arıza; küçük ve dengesiz bir küme. Gerçek bir sistemde bu, kaçırılan arıza ile gereksiz bakımın maliyetine göre ayarlanacak bir eşik kararı; olasılık çıktısını gösterge panelinde bu yüzden gösteriyorum.
+
+Kalan ömür tahmininde 4 kademeli arızalı test modülünde ortalama mutlak hata 4.7 örnek; bozulma süresinin %3 – 4'ü kadar.
+
+## Sınırlamalar
+
+- Telemetri sentetik. Gerçek bir modülün gürültü ve korelasyon yapısı muhtemelen daha karmaşık.
+- MATLAB tarafı küçük ve çalıştırılabilir bir simülasyon betiği; Simulink deneyimi iddia etmiyorum.

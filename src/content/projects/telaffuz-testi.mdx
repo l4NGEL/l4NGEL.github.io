@@ -1,33 +1,43 @@
 ---
 title: "Telaffuz Testi"
-description: "İngilizce telaffuza fonem fonem skor veren, tamamen offline bir Android uygulaması. Forced alignment'ı Kotlin'de sıfırdan yazdım."
-group: ses-dil
-order: 10
-date: "Tem – Ağu 2026"
-stack: [Kotlin, Android, wav2vec2, ONNX Runtime]
+tagline: "İnternetsiz çalışan Android uygulaması; İngilizce telaffuza fonem fonem güven skoru veriyor."
+summary: "Bir cümleyi okuyorsunuz, uygulama kaydı telefonda analiz edip her ses için ayrı bir güven skoru veriyor. \"Kelimeyi doğru mu söyledin\" yerine hangi sesi nasıl söylediğinizi gösteriyor ve ses kaydı cihazdan hiç çıkmıyor."
+categories: [ai, web]
+order: 11
+period: Temmuz – Ağustos 2026
+year: 2026
+stack: [Kotlin, Android, wav2vec2, CTC, ONNX Runtime, INT8, CMUdict]
+metrics:
+  - { value: '38', label: 'İngilizce fonem, ARPABET' }
+  - { value: '~120 MB', label: 'INT8 model, belleğe eşlenmiş' }
+  - { value: '0', label: 'ağ izni' }
+cover:
+  src: /images/telaffuz/app.webp
+  alt: Uygulamanın ana ekranı; okunacak cümle ve kayıt düğmesi
 ---
-import Figure from '../../components/Figure.astro';
 
-Bir cümle okuyorsunuz, uygulama kaydı telefonda analiz edip her ses için ayrı bir güven skoru veriyor. Ses kaydı cihazdan çıkmıyor; uygulamanın internet izni bile yok.
+## Neden farklı
 
-Çoğu telaffuz uygulaması konuşmayı metne çevirip hedef cümleyle karşılaştırıyor, o da ancak "kelime doğru mu" seviyesinde bir sonuç veriyor. Ben metne çevirmeyi atlayıp akustik modelin ham fonem olasılıklarını kullandım:
+Çoğu telaffuz uygulaması konuşmayı metne çevirip hedef cümleyle karşılaştırıyor. Bu da ancak "kelime doğru mu" düzeyinde, kaba bir sonuç veriyor. Ben metne çevirmeyi atlayıp akustik modelin ham fonem olasılıklarıyla çalışmak istedim.
+
+## Nasıl çalışıyor
 
 ```
 ses (16 kHz) → wav2vec2 (ONNX, INT8) → kare başına fonem olasılıkları
-hedef cümle → CMUdict → beklenen fonem dizisi
-      ↓
-CTC forced alignment (Viterbi, Kotlin)
-      ↓
-fonem başına güven skoru + duyulan ses
+                                                  │
+hedef cümle → CMUdict → beklenen fonem dizisi     │
+                                                  ▼
+                        CTC forced alignment (Viterbi, Kotlin)
+                                                  │
+                                                  ▼
+                   fonem başına güven skoru + "duyulan" ses
 ```
 
-- wav2vec2 tabanlı fonem modeli her ~20 ms için 38 fonem üzerinde olasılık veriyor.
-- Hedef cümle CMUdict ile fonemlere çevriliyor.
-- İkisini Viterbi ile zaman ekseninde hizalıyorum. Algoritmayı önce Python'da torchaudio'nun sonucuyla karşılaştırarak doğruladım, sonra telefonda çalışsın diye Kotlin'de yeniden yazdım (`ForcedAligner.kt`).
-- Kullanıcının aslında ne söylediğini göstermek için birbirine yakın seslerden küçük gruplar tanımladım; model sadece bu grupların içinden seçim yaptığı için gürültüde anlamsız bir fonem uydurmuyor. Modelin zayıf olduğu yerler (cümle başı ve sonu, çok kısa patlamalı sesler) kullanıcıya hata olarak gösterilmiyor.
+1. **Akustik model:** wav2vec2 tabanlı, CTC ile eğitilmiş bir fonem modeli, her ~20 ms'lik kare için 38 fonem üzerinde olasılık dağılımı üretiyor.
+2. **Beklenen sesler:** Okunacak cümle, ~130 bin kelimelik açık telaffuz sözlüğü CMUdict ile fonem dizisine çevriliyor.
+3. **Hizalama:** Olasılık matrisi ile beklenen fonem dizisi, Viterbi dinamik programlamasıyla zaman ekseninde hizalanıyor. Algoritmayı önce Python / torchaudio ile referans alıp doğruladım, sonra cihazda çalışması için Kotlin'de sıfırdan yazdım.
+4. **Skor:** Her fonemin hizalandığı aralıktaki ortalama olasılık 0 – 100 arası bir skora dönüşüyor. Kullanıcının aslında ne söylediğini göstermek için fonetik olarak yakın seslerden "karışma grupları" tanımladım; model yalnızca bu küçük aday havuzunda seçim yaptığı için gürültüden anlamsız bir fonem uydurmuyor. Modelin bilinen kör noktaları (cümle başı ve sonu, tek karelik patlamalı sesler) kullanıcıya hata gibi gösterilmiyor.
 
-Model INT8'e quantize edilip ONNX Runtime ile çalışıyor. ~120 MB'lık dosyayı ilk başta Java heap'ine okumaya çalışınca OOM aldım, memory-mapped yüklemeye geçtim.
+## Cihazda çalıştırma
 
-<div style="max-width:260px">
-<Figure src="/images/telaffuz/app.webp" caption="Ana ekran." />
-</div>
+Model INT8'e nicemlenip ONNX'e aktarıldı ve Android'de ONNX Runtime ile çalışıyor. ~120 MB'lık model dosyasını ilk denemede Java heap'ine okumaya çalıştım ve bellek taşması aldım; dosyayı belleğe eşleyerek (memory-mapped) yüklemeye geçtim. Uygulamanın internet izni bile yok.

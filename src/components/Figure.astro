@@ -1,18 +1,23 @@
 ---
-// Görsel ya da (slot ile) SVG şema + alt yazı.
+// Numaralı şekil. Ya `src` ile bir görsel ya da slot ile bir SVG şema alır.
 interface Props {
+  n?: number | string;
   caption: string;
   src?: string;
   alt?: string;
+  bare?: boolean;
+  class?: string;
 }
 
-const { caption, src, alt } = Astro.props;
+const { n, caption, src, alt, bare = false, class: cls } = Astro.props;
 ---
-<figure>
-  {src ? (
-    <img src={src} alt={alt ?? caption} loading="lazy" decoding="async" />
-  ) : (
-    <div class="fig-frame box"><div class="fig-scroll"><slot /></div></div>
-  )}
-  <figcaption>{caption}</figcaption>
+<figure class:list={['fig', cls]}>
+  <div class:list={['fig-frame', { bare }]}>
+    {src ? (
+      <img src={src} alt={alt ?? caption} loading="lazy" decoding="async" />
+    ) : (
+      <div class="fig-scroll"><slot /></div>
+    )}
+  </div>
+  <figcaption>{n !== undefined && <b>Şekil {n}</b>}{caption}</figcaption>
 </figure>

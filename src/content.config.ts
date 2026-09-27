@@ -3,17 +3,22 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
 const projects = defineCollection({
-  loader: glob({ pattern: '**/*.mdx', base: './src/content/projects' }),
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/projects' }),
   schema: z.object({
     title: z.string(),
-    description: z.string(),
-    group: z.enum(['goru', 'ses-dil', 'sistem', 'web']),
+    tagline: z.string(),
+    summary: z.string(),
+    categories: z.array(z.enum(['cv', 'ai', 'sys', 'web', 'sec'])),
+    featured: z.boolean().default(false),
     order: z.number(),
-    date: z.string(),
+    period: z.string(),
+    year: z.number(),
+    status: z.string().optional(),
     stack: z.array(z.string()),
+    metrics: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
     repo: z.string().url().optional(),
-    thumb: z.string().optional(),
-    wip: z.boolean().default(false),
+    cover: z.object({ src: z.string(), alt: z.string() }).optional(),
+    diagram: z.string().optional(),
   }),
 });
 

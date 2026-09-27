@@ -1,18 +1,29 @@
 ---
 title: "Memora"
-description: "Düğün ve etkinlikler için dijital davetiye, RSVP ve ortak fotoğraf galerisi. Misafirler uygulama indirmeden QR ile katılıyor."
-group: web
+tagline: "Dijital davetiye, RSVP, QR ile misafir erişimi ve ortak fotoğraf galerisi olan etkinlik platformu."
+summary: "Düğün ve benzeri etkinlikler için bir platform. Ev sahibi mobil uygulamadan etkinliği yönetiyor; misafirler uygulama indirmeden, bir QR kodu okutarak davetiyeye ulaşıyor, katılımını bildiriyor ve fotoğraf yüklüyor."
+categories: [web]
 order: 16
-date: "Tem 2026"
-stack: [Node.js, Express, PostgreSQL, Flutter, Vite]
+period: Temmuz 2026
+year: 2026
+stack: [Node.js, Express, PostgreSQL, JWT, Flutter, Vite, WebSocket, iyzico, Cloudflare R2, Docker]
+metrics:
+  - { value: '15', label: 'REST uç noktası' }
+  - { value: '3', label: 'istemci: backend, mobil, web' }
 ---
 
-Üç parçadan oluşuyor:
+## Bileşenler
 
-- **Backend (Node.js + Express + PostgreSQL):** access + refresh token'lı JWT. Google ve Apple girişinde ID token'ın imzasını, issuer'ını ve audience'ını sunucuda doğruluyorum. Ödeme için iyzico entegrasyonu var.
-- **Ev sahibi uygulaması (Flutter):** etkinlik oluşturma, RSVP ve medya paneli, galeri, QR kod yönetimi ve WebSocket ile canlı slayt gösterisi.
-- **Misafir sayfası (Vite):** QR okutunca açılıyor. Katılım formu, fotoğraf / video yükleme ve geri sayım var, uygulama indirmek gerekmiyor.
+- **Backend (Node.js + Express + PostgreSQL):** access ve refresh token'lı JWT; Google ve Apple girişinde ID token'ın imzası, yayıncısı ve hedef kitlesi sunucuda doğrulanıyor. Ödeme için iyzico entegrasyonu, sağlık kontrolü veritabanını da yokluyor.
+- **Ev sahibi uygulaması (Flutter):** etkinlik oluşturma, RSVP ve medya paneli, masonry galeri, QR kod yönetimi, WebSocket ile canlı slayt gösterisi.
+- **Misafir portalı (Vite):** QR ile açılan davetiye sayfası, katılım formu (katılım, yemek tercihi, mesaj), sürükle bırak ve kameradan fotoğraf / video yükleme, geri sayım.
 
-Depolama (R2 / S3), e-posta, sosyal giriş ve ödeme ortam değişkenleriyle açılıyor; anahtar yoksa o özellik kapanıyor ama uygulama çalışmaya devam ediyor. Örneğin depolama anahtarı yoksa dosyalar yerel diske yazılıyor.
+## Dış servisler isteğe bağlı
 
-Production'da `JWT_SECRET` 32 karakterden kısaysa ya da admin şifresi varsayılan bırakılmışsa uygulama açılmıyor.
+Depolama (R2 / S3), e-posta, sosyal giriş ve ödemenin hepsi ortam değişkenleriyle açılıyor. Anahtar yoksa ilgili özellik kapanıyor ama uygulama çalışmaya devam ediyor; örneğin depolama anahtarı yoksa dosyalar yerel diske yazılıyor. Bu sayede proje hiçbir dış servis anahtarı olmadan da yerelde çalışabiliyor.
+
+## Güvenlik
+
+- Üretim ortamında `JWT_SECRET` en az 32 karakter değilse ya da yönetici şifresi varsayılan bırakılmışsa uygulama açılışta duruyor.
+- CORS bir izin listesiyle sınırlı.
+- Bilinen `npm audit` uyarıları yalnızca iki ödeme ve kimlik doğrulama kütüphanesinin dolaylı bağımlılıklarında; README'de belgeli.

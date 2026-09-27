@@ -1,35 +1,54 @@
 ---
 title: "NABIZ"
-description: "Makine sesi ve titreşiminden arıza tespiti. Model uçta C++ ile çalışıyor, sonuçlar MQTT ile merkeze gidiyor. Şu an üzerinde çalıştığım proje."
-group: ses-dil
-order: 8
-date: "Eyl 2026"
-stack: [Python, PyTorch, C++, ONNX Runtime, MQTT, Protobuf, FastAPI]
-wip: true
+tagline: "Titreşim ve akustik veriden teçhizat arızası tespiti; uçta C++ çıkarım, merkezde izleme."
+summary: "Makinelerin sesinden ve titreşiminden arıza belirtisi yakalayan, kalan ömrü tahmin eden ve sonuçları merkezi bir izleme servisine gönderen bir sistem. Sensör verisinden saha raporuna kadar tüm zinciri kurmayı hedefliyorum; şu an yarısından fazlası çalışıyor."
+categories: [ai, sys]
+order: 6
+period: Eylül 2026
+year: 2026
+status: geliştiriliyor
+stack: [Python, PyTorch, scikit-learn, ONNX, ONNX Runtime C++, CMake, MQTT, Protobuf, FastAPI, SQLite]
+metrics:
+  - { value: '206', label: 'birim testi' }
+  - { value: '4.5e-6', label: 'C++ ile Python arasındaki maks. fark (FP32)' }
+  - { value: '12 / 12', label: 'tespit merkeze ulaştı' }
 ---
 
-Sensör verisinden merkezi izlemeye kadar tüm zinciri kurmaya çalıştığım bir proje: sinyal işleme, model, uç cihazda çıkarım, merkeze iletim, en sonda da bir saha testi raporu. Yarısından fazlası çalışıyor, gerisi yolda.
+## Hedef
 
-| Faz | | Durum |
+Zincir şu: **sensör verisi → sinyal işleme → model → uçta çıkarım → merkeze iletim → saha testi → rapor.** Her halkayı ayrı bir faz olarak ele alıyorum ve bir fazı "bitti" saymadan önce test planındaki kabul ölçütlerini yazıyorum.
+
+| Faz | Kapsam | Durum |
 |---|---|---|
-| 0 | veri şartnamesi, split kontrolü, CI | tamam |
-| 1 | DSP: hizalama, order / envelope analizi, 168 öznitelik | tamam |
-| 2 | 7 model ailesi, AUC / pAUC / ECE, kalan ömür (GRU, C-MAPSS) | büyük kısmı tamam |
-| 3 | ONNX, INT8 quantization, gecikme ölçümü | başladı |
-| 4 | C++ ONNX Runtime çıkarımı | başladı |
-| 5 | Protobuf + MQTT + merkezi collector | büyük kısmı tamam |
-| 6 | saha testi simülasyonu ve rapor | sırada |
+| 0 | Veri şartnamesi, sızıntısız bölme doğrulaması, CI | tamam |
+| 1 | DSP: hizalama, order / zarf analizi, 168 öznitelik | tamam |
+| 2 | AUC / pAUC / ECE değerlendirme, 7 model ailesi, kalan ömür, kalibrasyon | büyük ölçüde tamam |
+| 3 | ONNX'e aktarma, INT8 nicemleme, gecikme ölçümü | başladı |
+| 4 | C++ ONNX Runtime çıkarım yolu | başladı, parite testi geçti |
+| 5 | Protobuf + MQTT + merkezi toplayıcı | büyük ölçüde tamam |
+| 6 | Saha testi simülasyonu, rapor, gösterge paneli | planlandı |
 
-## C++ tarafı
+## Sinyal ve modeller
 
-Uç cihazda Python olmayacağını varsayıp modeli ONNX'e aktardım ve C++'ta ONNX Runtime ile çalıştırdım. Doğru çalıştığından emin olmak için aynı `.onnx` dosyasını Python ve C++'ta aynı girdilerle çalıştırıp çıktıları karşılaştıran bir test yazdım. FP32'de en büyük fark 4.5e-6, yani ikisi aynı sonucu veriyor. INT8'de fark ~0.05'e çıkıyor ama korelasyon hâlâ 1.0, sıralama bozulmuyor. Farkın sebebi Python wheel'i ile C++ SDK'nın quantized kernel'larının birebir aynı olmaması; bunu not ettim.
+Ham ses 2 saniyelik pencerelere bölünüyor; her pencereden 168 öznitelik ve bir log-mel tensörü çıkıyor. Bunların üzerinde yedi model ailesini aynı değerlendirme çerçevesiyle karşılaştırıyorum. Kalan ömür için C-MAPSS üzerinde bir GRU modeli var. Üç veri bölmesi, her çalıştırmada sızıntı kontrolü ve bir parmak iziyle doğrulanıyor.
 
-C++'ta çıkarım P50 ≈ 0.02 ms.
+## C++ çıkarım ve parite
+
+Uç cihazda Python çalışmayacağını varsayarak modeli ONNX'e aktarıp C++ ile ONNX Runtime üzerinden çalıştırıyorum. Aynı `.onnx` dosyasını Python ve C++'ta aynı girdilerle çalıştırıp çıktıları karşılaştıran bir "golden vector" testi yazdım:
+
+| Hassasiyet | Maks. fark | Korelasyon |
+|---|---|---|
+| FP32 | 4.5e-6 | 1.000000 |
+| INT8 | ~0.05 | 1.000000 |
+
+INT8'de fark sıkı toleransı aşıyor. Sebebi Python wheel'i ile C++ SDK derlemesinin nicemlenmiş çekirdekleri arasındaki küçük sayısal farklar; sıralama ve ayrım bozulmuyor. Bunu gizlemek yerine belgeledim. C++ çıkarım gecikmesi P50 ≈ 0.02 ms.
 
 ## Merkeze iletim
 
-Tespitler Protobuf ile paketlenip MQTT'ye gönderiliyor. Broker'a ulaşılamazsa mesajlar yerel buffer'da bekliyor. Bunu broker olmadan denedim, 12 mesajın 12'si buffer'a düştü. Collector'ı ayrıca başlatıp HTTP ile besleyince 12 tespitin hepsi ulaştı ve istatistikler üç makine için doğru çıktı.
+Tespitler Protobuf ile paketlenip MQTT'ye yayınlanıyor. Broker'a ulaşılamazsa mesajlar yerel tampona düşüyor ve bağlantı gelince gönderiliyor. Docker'ın çalışmadığı bir ortamda bunu broker olmadan test ettim: 12 mesajın 12'si tampona düştü. Toplayıcı servisini ayrıca başlatıp HTTP ile besledim; 12 tespitin hepsi ulaştı ve istatistik uç noktası üç makine için doğru ortalama ve maksimum skoru döndürdü.
 
-## Eksikler
+## Henüz yapılmayanlar
 
-Şimdiki sonuçlar sentetik veride. Sırada gerçek MIMII verisi, mel çıkarımının C++'a taşınması, TensorRT ve gerçek bir ARM kartında ölçüm var.
+- Gerçek MIMII ve C-MAPSS verisiyle koşum; şimdiki sonuçlar sentetik veri üzerinde.
+- WAV'dan mel çıkarımının C++'a taşınması ve mel-tensör tabanlı modellerin C++ desteği.
+- TensorRT, gerçek ARM donanımında ölçüm ve canlı broker ile ağ arızası enjeksiyonu.

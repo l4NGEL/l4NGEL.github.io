@@ -1,33 +1,91 @@
 ---
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import Figure from '../../components/Figure.astro';
+import Metrics from '../../components/Metrics.astro';
 import Table from '../../components/Table.astro';
+import { CATEGORIES } from '../../categories';
 
 export async function getStaticPaths() {
-  const projects = await getCollection('projects');
-  return projects.map((project) => ({ params: { slug: project.id }, props: { project } }));
+  const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+  return projects.map((project, i) => ({
+    params: { slug: project.id },
+    props: { project, next: projects[(i + 1) % projects.length], total: projects.length },
+  }));
 }
 
 interface Props {
   project: CollectionEntry<'projects'>;
+  next: CollectionEntry<'projects'>;
+  total: number;
 }
 
-const { project } = Astro.props;
+const { project, next, total } = Astro.props;
 const d = project.data;
-const { Content } = await render(project);
+const { Content, headings } = await render(project);
+const toc = headings.filter((h) => h.depth === 2);
+const pad = (n: number) => String(n).padStart(2, '0');
 ---
-<Base title={`${d.title} · Beyza Nur Kılıç`} description={d.description} image={d.thumb}>
-  <main>
-    <p class="back"><a href="/">← tüm projeler</a></p>
-    <h1>{d.title}</h1>
-    <p class="p-meta">
-      {d.date} · {d.stack.join(', ')}
-      <br />
-      {d.repo ? <a href={d.repo} rel="noopener">{d.repo.replace('https://', '')}</a> : 'Kod şimdilik özel, istenirse paylaşabilirim.'}
-      {d.wip && ' · devam ediyor'}
-    </p>
-    <article>
-      <Content components={{ table: Table }} />
-    </article>
+<Base title={`${d.title} · Beyza Nur Kılıç`} description={d.tagline} image={d.cover?.src}>
+  <main class="wrap">
+    <header class="p-top">
+      <p class="crumb"><a href="/">← Tüm projeler</a></p>
+      <h1 class="p-title">{d.title}</h1>
+      <div class="p-lead">
+        <div>
+          {d.status && <span class="status">{d.status}</span>}
+          <p class="lead">{d.summary}</p>
+        </div>
+        <dl class="facts">
+          <dt>Dönem</dt><dd>{d.period}</dd>
+          <dt>Alan</dt><dd>{d.categories.map((c) => CATEGORIES[c]).join(', ')}</dd>
+          <dt>Rol</dt><dd>Tek kişilik proje: tasarım, kod, test, değerlendirme</dd>
+          <dt>Teknoloji</dt><dd>{d.stack.join(', ')}</dd>
+          <dt>Kod</dt><dd>{d.repo ? <a href={d.repo} rel="noopener">{d.repo.replace('https://', '')}</a> : 'Talep üzerine paylaşılır'}</dd>
+        </dl>
+      </div>
+      <Metrics items={d.metrics} class="p-metrics" />
+    </header>
+
+    {d.cover && (
+      <div class="p-cover">
+        <Figure n={1} src={d.cover.src} alt={d.cover.alt} caption={d.cover.alt} bare />
+      </div>
+    )}
+
+    <div class="p-body">
+      {toc.length > 1 && (
+        <nav class="toc" aria-label="Bu sayfada">
+          <span class="label">Bu sayfada</span>
+          <ol>{toc.map((h) => <li><a href={`#${h.slug}`}>{h.text}</a></li>)}</ol>
+        </nav>
+      )}
+      <article class="prose">
+        <Content components={{ table: Table }} />
+      </article>
+    </div>
+
+    <nav class="next" aria-label="Sonraki proje">
+      <a href={`/projeler/${next.id}`}>
+        <span class="label">Sonraki proje</span>
+        <span class="t">{next.data.title} →</span>
+      </a>
+    </nav>
   </main>
+
+  <script>
+    const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc a')];
+    const map = new Map(links.map((a) => [decodeURIComponent(a.hash.slice(1)), a]));
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          links.forEach((a) => a.classList.remove('on'));
+          map.get(e.target.id)?.classList.add('on');
+        }
+      },
+      { rootMargin: '0px 0px -70% 0px' },
+    );
+    document.querySelectorAll('.prose h2[id]').forEach((h) => io.observe(h));
+  </script>
 </Base>

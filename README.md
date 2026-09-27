@@ -14,36 +14,47 @@ npm run build     # dist/ altına statik çıktı
 
 ```
 src/
-  content/projects/*.md   her proje bir dosya (frontmatter + detay metni)
-  pages/index.astro       ana sayfa: öne çıkanlar + tüm projeler + filtre
-  pages/projeler/[slug]   proje detay sayfaları (otomatik üretilir)
-  pages/hakkimda.astro    deneyim, eğitim, beceriler
-  layouts/Base.astro      ortak şablon (menü, footer, tema)
-  styles/global.css       tasarım
-public/images/            ekran görüntüleri (webp)
+  content/projects/*.mdx   her proje bir dosya: frontmatter + vaka çalışması metni
+  diagrams/*.astro         elle çizilmiş SVG şemalar (tema renklerini kullanır)
+  components/              Figure (numaralı şekil), Metrics, Table
+  pages/index.astro        ana sayfa: seçili çalışmalar + filtreli proje dizini
+  pages/projeler/[slug]    proje sayfaları (otomatik üretilir, içindekiler menüsüyle)
+  pages/hakkimda.astro     deneyim, eğitim, beceriler
+  layouts/Base.astro       ortak şablon
+  styles/global.css        tasarım: Archivo + Newsreader + IBM Plex Mono
+public/images/             ekran görüntüleri (webp)
 ```
 
 ## Yeni proje eklemek
 
-`src/content/projects/` altına bir `.md` dosyası ekle. Alanlar `src/content.config.ts` içinde tanımlı:
+`src/content/projects/` altına bir `.mdx` dosyası ekle. Alanlar `src/content.config.ts` içinde tanımlı.
+İki nokta içeren metinleri tırnak içine al:
 
 ```yaml
 ---
-title: Proje adı
-tagline: Tek cümlelik açıklama
-categories: [cv, ai, sys, web, sec]   # biri ya da birkaçı
-featured: false                       # true ise "Öne çıkanlar"da
-order: 18                             # sıralama
+title: "Proje adı"
+tagline: "Dizinde görünen tek satırlık açıklama"
+summary: "Proje sayfasının ve seçili çalışmalar bloğunun giriş paragrafı"
+categories: [cv, ai, sys, web, sec]
+featured: false          # true ise ana sayfada büyük blok olarak
+order: 18
 period: Ekim 2026
-status: geliştiriliyor                # opsiyonel
+year: 2026
+status: geliştiriliyor   # opsiyonel
 stack: [Python, ...]
-highlights:
-  - "Kartta görünen madde; <b>kalın</b> kullanılabilir"
-repo: https://github.com/...          # opsiyonel, yoksa "talep üzerine"
-cover: { src: /images/x/y.webp, alt: Açıklama }   # opsiyonel
+metrics:                 # opsiyonel, büyük rakamlar
+  - { value: '%90', label: 'açıklama' }
+repo: https://github.com/...   # opsiyonel
+cover: { src: /images/x/y.webp, alt: Şekil açıklaması }   # opsiyonel
+diagram: autotrack       # opsiyonel; ana sayfada kapak yerine şema (src/diagrams/index.ts)
 ---
+import Figure from '../../components/Figure.astro';
 
-Detay sayfası metni (Markdown).
+## Başlık
+
+Metin... Görsel için:
+
+<Figure n={2} src="/images/x/z.webp" caption="Açıklama" bare />
 ```
 
 ## Yayınlama

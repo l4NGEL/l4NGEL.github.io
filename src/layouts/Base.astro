@@ -1,0 +1,86 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+}
+
+const { title, description, image } = Astro.props;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = image ? new URL(image, Astro.site).href : undefined;
+const nav = [
+  { href: '/', label: 'Projeler' },
+  { href: '/hakkimda', label: 'Hakkımda' },
+];
+---
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script is:inline>
+      try {
+        const t = localStorage.getItem('theme');
+        if (t) document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <nav class="site-nav" aria-label="Site">
+      <div class="wrap">
+        <a class="brand" href="/">Beyza Nur Kılıç</a>
+        <div class="nav-links">
+          {nav.map((n) => (
+            <a href={n.href} aria-current={path === n.href || (n.href === '/' && path.startsWith('/projeler')) ? 'page' : undefined}>
+              {n.label}
+            </a>
+          ))}
+          <button class="theme-btn" id="theme" type="button" aria-label="Açık/koyu tema">tema</button>
+        </div>
+      </div>
+    </nav>
+
+    <slot />
+
+    <footer class="site-foot">
+      <div class="wrap">
+        <span>© {new Date().getFullYear()} Beyza Nur Kılıç</span>
+        <span>
+          <a href="mailto:byznrklc01@gmail.com">E-posta</a> ·
+          <a href="https://github.com/l4NGEL" rel="noopener">GitHub</a> ·
+          <a href="https://www.linkedin.com/in/beyza-nur-kili%C3%A7/" rel="noopener">LinkedIn</a>
+        </span>
+      </div>
+    </footer>
+
+    <script is:inline>
+      document.getElementById('theme').addEventListener('click', () => {
+        const root = document.documentElement;
+        const dark = root.dataset.theme
+          ? root.dataset.theme === 'dark'
+          : matchMedia('(prefers-color-scheme: dark)').matches;
+        root.dataset.theme = dark ? 'light' : 'dark';
+        try { localStorage.setItem('theme', root.dataset.theme); } catch (e) {}
+      });
+    </script>
+  </body>
+</html>

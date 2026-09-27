@@ -1,0 +1,31 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  showCover?: boolean;
+}
+
+const { project, showCover = false } = Astro.props;
+const p = project.data;
+---
+<article class="card" data-cat={p.categories.join(' ')}>
+  {showCover && p.cover && (
+    <img class="card-cover" src={p.cover.src} alt="" loading="lazy" decoding="async" />
+  )}
+  <div class="card-body">
+    <h3>
+      <a href={`/projeler/${project.id}`}>{p.title}</a>
+      {p.status && <span class="status">{p.status}</span>}
+    </h3>
+    <p class="tagline">{p.tagline}</p>
+    <ul class="ticks">
+      {p.highlights.map((h) => <li set:html={h} />)}
+    </ul>
+    <div class="stack">{p.stack.map((s) => <span>{s}</span>)}</div>
+    <div class="card-foot">
+      <span>{p.repo ? 'Açık kaynak' : 'Kod: talep üzerine'}</span>
+      <span class="more">Detaylar →</span>
+    </div>
+  </div>
+</article>

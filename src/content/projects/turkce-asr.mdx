@@ -1,36 +1,25 @@
 ---
-title: "Türkçe Konuşma Tanıma"
-tagline: "Telefonda internetsiz çalışan Türkçe ASR, konuşmacı tanıma ve diarization."
-summary: "Türkçe konuşmayı telefonda, internet olmadan metne çeviren ve kimin konuştuğunu ayırt eden bir ses hattı. Hangi modeli kullanacağıma tahminle değil, her adımı ölçerek karar verdim."
-categories: [ai]
-order: 10
-period: Temmuz 2026
-year: 2026
-stack: [Python, Whisper, Hugging Face, sherpa-onnx, ONNX, INT8, Android, Colab]
-metrics:
-  - { value: '%16.1', label: 'WER, cihaz üstü INT8 ONNX' }
-  - { value: '%3.0', label: 'CER, aynı model' }
-  - { value: '13.864', label: 'eğitim örneği, 3 veri kümesi' }
+title: "Türkçe konuşma tanıma"
+description: "Telefonda internetsiz çalışan Türkçe ASR ve konuşmacı tanıma. Whisper'ı Türkçe için fine-tune edip INT8 ONNX olarak cihaza koydum."
+group: ses-dil
+order: 9
+date: "Tem 2026"
+stack: [Python, Whisper, sherpa-onnx, ONNX, Android, Colab]
 ---
 
-## Ölçümle ilerleyen kararlar
+Türkçe konuşmayı telefonda, internet olmadan metne çeviren ve kimin konuştuğunu ayırt eden bir ses hattı. Model seçimini ölçümlerle yaptım:
 
-1. **Kalite tavanı:** `whisper large-v3` Türkçede WER %7.0 / CER %0.9 verdi. Ama telefon CPU'sunda gerçek zamanın 0.3 – 0.4 katı hızda çalıştı; mobilde kullanılamaz.
-2. **Küçük model:** `whisper-small` WER %15.6 ve gerçek zamanın 1.5 katı hız. Kullanılabilir ama büyük modelin gerisinde.
-3. **Neden fine-tune:** Kapsamı yalnızca Türkçeye indirince, küçük modelin kapasitesini 99 dil yerine tek dile ayırmak anlamlı hale geldi.
-4. **İlk deneme:** Yalnızca FLEURS (2.864 örnek) ile WER %13.7. Eğitim kaybı sıfıra yaklaşırken validasyon kaybı düzleşti; daha fazla veri değil, daha *çeşitli* veri gerekiyordu.
-5. **Son eğitim:** FLEURS + WorldSpeech + ISSAI TSC, 13.864 örnek, 2.500 adım: WER %14.03.
-6. **Dağıtım:** Konuşmacı tanıma da gerektiği için ASR, konuşmacı tanıma ve diarization'ı tek pakette sunan sherpa-onnx'e geçtim. Hugging Face modelini OpenAI-whisper formatına kendi yazdığım ve `strict=True` ile doğruladığım bir dönüşümle çevirip ONNX'e aktardım.
-7. **Cihaz üstü sonuç:** INT8 ONNX modeli fp32'ye karşı doğrulandı: **WER %16.1 / CER %3.0** (N=100, FLEURS).
+- `large-v3` Türkçede çok iyi (WER %7.0) ama telefon CPU'sunda gerçek zamanın 0.3 – 0.4 katı hızda çalışıyor, kullanılamaz.
+- `whisper-small` WER %15.6, gerçek zamanın 1.5 katı hız. Kullanılabilir ama geride.
+- Kapsamı sadece Türkçeye indirince küçük modeli fine-tune etmek mantıklı hale geldi. Sadece FLEURS ile WER %13.7'ye indi ama validation loss düzleşti; daha fazla değil daha çeşitli veri lazımdı.
+- FLEURS + WorldSpeech + ISSAI TSC (13.864 örnek) ile WER %14.03.
 
-## Telefonda bulunan zayıflık
+Konuşmacı tanıma da gerektiği için ASR, konuşmacı tanıma ve diarization'ı bir arada sunan sherpa-onnx'e geçtim. Hugging Face checkpoint'ini OpenAI-whisper formatına çeviren dönüşümü kendim yazdım (`strict=True` ile kontrol ederek) ve ONNX'e aktardım. Telefondaki INT8 model FLEURS'ta WER %16.1 / CER %3.0 veriyor (N=100).
 
-Gerçek telefon testinde kısa ve günlük ifadelerde hata yaptığını gördüm: "naber" → "maber", "ses deneme" → "ses taneme". Eğitim verisinin tamamı resmi dile yakındı (okunmuş metin, meclis kaydı, TV haberi). sherpa-onnx'in Whisper uygulaması beam search desteklemediği için (kaynak kodda kontrol ettim) bunu çözme ayarıyla düzeltemezdim. Çözüm olarak, kısa ve doğal komut cümleleri içeren Speech-MASSIVE'i eğitim karışımına katıp eğitimi son checkpoint'ten sürdüren bir adım ekledim.
+## Telefonda çıkan sorunlar
 
-## Konuşmacı tanıma
+Gerçek telefonda kısa, günlük ifadelerde hata yapıyordu: "naber" → "maber", "ses deneme" → "ses taneme". Eğitim verisinin hepsi resmi dile yakındı (okunmuş metin, meclis kaydı, TV haberi). sherpa-onnx'in Whisper tarafı beam search desteklemiyor (kaynak koduna baktım), o yüzden decode ayarıyla düzeltilemiyordu. Kısa komut cümleleri içeren Speech-MASSIVE'i eğitim karışımına katıp eğitimi son checkpoint'ten sürdüren bir adım ekledim.
 
-ResNet34 tabanlı konuşmacı modeli, temiz Colab kayıtlarında 0.84 eşikle çalışıyordu. Gerçek telefon mikrofonunda doğru konuşmacının skorları bile 0.52 – 0.83'e düştü. Cihazda ölçtüğüm skorlara göre (doğru konuşmacı 0.52 / 0.64 / 0.79 / 0.83, başkası 0.49) eşiği 0.55'e çektim. Ayrıca VAD bölümlerinin paralel değil sıralı işlenmesi gerektiğini buldum; aksi halde art arda konuşmalarda sıra karışıyordu.
+Konuşmacı doğrulamada Colab'daki temiz kayıtlarla 0.84 eşik iyi çalışıyordu. Telefon mikrofonunda doğru kişinin skorları bile 0.52 – 0.83'e düştü; cihazda ölçtüğüm skorlara göre eşiği 0.55'e çektim. Ayrıca VAD segmentlerini paralel işleyince art arda konuşmalarda sıra karışıyordu, sıralı işlemeye geçtim.
 
-## Aynı klasörde: telaffuz değerlendirme
-
-İngilizce telaffuz için kelime düzeyinde "doğru / yanlış" kararı hedefledim; precision %12 – 32'de kaldı, bu kadar yanlış alarm kullanılamaz. Tasarımı fonem düzeyinde güven skoruna çevirdim ve bu ayrı bir uygulamaya dönüştü: Telaffuz Testi.
+Aynı klasörde İngilizce telaffuz değerlendirmesi de denedim; kelime bazında doğru / yanlış kararı %12 – 32 precision'da kaldı. Bu fonem bazında skora dönüşüp [Telaffuz Testi](/projeler/telaffuz-testi) oldu.

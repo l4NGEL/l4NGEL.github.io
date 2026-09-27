@@ -8,10 +8,8 @@ interface Props {
 }
 
 const { title, description, image } = Astro.props;
-const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = image ? new URL(image, Astro.site).href : undefined;
-const onWork = path === '/' || path.startsWith('/projeler');
 ---
 <!doctype html>
 <html lang="tr">
@@ -22,65 +20,29 @@ const onWork = path === '/' || path.startsWith('/projeler');
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
     {ogImage && <meta property="og:image" content={ogImage} />}
-    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400&display=swap"
-      rel="stylesheet"
-    />
-    <script is:inline>
-      try {
-        const t = localStorage.getItem('theme');
-        if (t) document.documentElement.dataset.theme = t;
-      } catch (e) {}
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <header class="topbar">
-      <div class="wrap">
-        <a class="mark" href="/">B.N. Kılıç<span>.</span></a>
-        <nav class="menu" aria-label="Site">
-          <span class="coord">39.93°N 32.86°E</span>
-          <a href="/" aria-current={onWork ? 'page' : undefined}>Çalışmalar</a>
-          <a href="/hakkimda" aria-current={path === '/hakkimda' ? 'page' : undefined}>Hakkımda</a>
-          <button class="theme" id="theme" type="button" aria-label="Açık/koyu tema">
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M7 1a6 6 0 0 1 0 12z" fill="currentColor"/></svg>
-          </button>
+    <div class="page">
+      <header class="top">
+        <a class="name" href="/">Beyza Nur Kılıç</a>
+        <nav>
+          <a href="/">projeler</a>
+          <a href="/hakkimda">hakkımda</a>
+          <a href="https://github.com/l4NGEL" rel="noopener">github</a>
         </nav>
-      </div>
-    </header>
-
-    <slot />
-
-    <footer class="foot">
-      <div class="wrap">
-        <p class="label">Bir proje, pozisyon ya da soru için</p>
-        <a class="big" href="mailto:byznrklc01@gmail.com">byznrklc01@gmail.com</a>
-        <div class="foot-row">
-          <span>
-            <a href="https://github.com/l4NGEL" rel="noopener">GitHub</a>
-            <a href="https://www.linkedin.com/in/beyza-nur-kili%C3%A7/" rel="noopener">LinkedIn</a>
-          </span>
-          <span>© {new Date().getFullYear()} Beyza Nur Kılıç · Ankara</span>
-        </div>
-      </div>
-    </footer>
-
-    <script is:inline>
-      document.getElementById('theme').addEventListener('click', () => {
-        const root = document.documentElement;
-        const dark = root.dataset.theme
-          ? root.dataset.theme === 'dark'
-          : matchMedia('(prefers-color-scheme: dark)').matches;
-        root.dataset.theme = dark ? 'light' : 'dark';
-        try { localStorage.setItem('theme', root.dataset.theme); } catch (e) {}
-      });
-    </script>
+      </header>
+      <slot />
+      <footer class="foot">
+        <a href="mailto:byznrklc01@gmail.com">byznrklc01@gmail.com</a> ·
+        <a href="https://www.linkedin.com/in/beyza-nur-kili%C3%A7/" rel="noopener">LinkedIn</a> ·
+        <a href="https://github.com/l4NGEL" rel="noopener">GitHub</a>
+      </footer>
+    </div>
   </body>
 </html>

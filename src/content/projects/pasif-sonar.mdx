@@ -1,60 +1,33 @@
 ---
-title: "Pasif Sonar"
-tagline: "Hidrofon sesinden gemi sınıflandırma; emin olmadığında karar vermeyen bir operatör aracı."
-summary: "Hidrofon kayıtlarından geçen geminin kargo, tanker ya da balıkçı olduğunu tahmin eden bir karar destek prototipi. Amacım daha agresif bir sınıflandırıcı değil, yeterince emin olmadığında \"belirsiz, takibe devam\" diyebilen bir sistemdi."
-categories: [ai, sys]
-order: 8
-period: Ağustos 2026
-year: 2026
-stack: [Python, PyTorch, CNN, FastAPI, Next.js, Leaflet, Docker]
-metrics:
-  - { value: '%83.6', label: 'gemi düzeyinde doğruluk' }
-  - { value: '%75.4', label: 'çoğunluk sınıfı tabanı' }
-  - { value: '%92.9', label: 'kabul edilen temaslarda doğruluk' }
+title: "Pasif sonar temas sınıflandırma"
+description: "Hidrofon kaydından gemi tipini tahmin eden, emin olmadığında karar vermeyip takibe devam eden bir operatör aracı."
+group: ses-dil
+order: 7
+date: "Ağu 2026"
+stack: [Python, PyTorch, FastAPI, Next.js, Docker]
 repo: https://github.com/l4NGEL/passive-sonar-contact-intelligence
-cover:
-  src: /images/sonar/dashboard.webp
-  alt: Operatör ekranı; temas haritası, sınıf olasılıkları ve EMİN kararı
+thumb: /images/sonar/dashboard.webp
 ---
 import Figure from '../../components/Figure.astro';
 
-## Fikir
+<Figure src="/images/sonar/dashboard.webp" caption="Operatör ekranı. Seçili temas kargo gemisi olarak, yeterince emin şekilde sınıflandırılmış." />
 
-10 saniyelik tek bir ses kesitinden verilen karar zayıf: %60.3 doğruluk. Aynı model bir geminin tüm pencereleri üzerinden ortalandığında doğruluk %83.6'ya çıkıyor. Bu yüzden ürünü "daha sert tahmin" üzerine değil, bir güven kapısı üzerine kurdum:
+Hidrofon kayıtlarından geçen geminin kargo, tanker ya da balıkçı teknesi olduğunu tahmin eden bir prototip. Veri VLIZ'in AIS etiketli hidrofon kayıtları (CC-BY-4.0).
 
-| Zorunlu sınıflandırıcı | Bu sistem |
-|---|---|
-| Kargo 0.43 / Tanker 0.39 → Kargo | **BELİRSİZ, takibe devam** |
-| Kargo 0.89 → Kargo | **KARGO, EMİN** |
+10 saniyelik tek bir ses parçasından verilen karar zayıf, doğruluk %60.3. Aynı modelin bir geminin bütün pencereleri üzerindeki ortalamasına bakınca doğruluk %83.6'ya çıkıyor. Ben de sistemi buna göre kurdum: her 10 saniyelik pencere bir CNN'den geçiyor, olasılıklar temas boyunca ortalanıyor, en az 5 pencere birikmeden karar verilmiyor. Ortalama olasılık yeterince yüksek değilse sistem bir sınıf söylemek yerine "belirsiz, takibe devam" diyor.
 
-## Hat
-
-Hidrofon sesi 10 saniyelik pencerelere bölünüyor, her pencere bir CNN'den geçip üç sınıf olasılığı üretiyor. Olasılıklar temas izi boyunca ortalanıyor. En az 5 pencere birikmeden karar verilmiyor; biriktikten sonra güven kapısı ya bir sınıf ile EMİN ya da BELİRSİZ diyor.
-
-<Figure n={2} src="/images/sonar/uncertain.webp" caption="Belirsiz bir temas: sistem sınıf söylemek yerine takibe devam etmeyi öneriyor" bare />
+<Figure src="/images/sonar/uncertain.webp" caption="Belirsiz bir temas. Kargo olasılığı önde ama sistem henüz karar vermiyor." />
 
 ## Sonuçlar
 
-61 görülmemiş gemi; eğitim ve testte ortak gemi kimliği (MMSI) yok.
+Test setinde 61 gemi var ve eğitimdeki gemilerle hiç ortak MMSI yok.
 
-| Ölçüt | Sonuç |
+| | |
 |---|---|
-| Kesit doğruluğu | %60.3 |
-| Gemi doğruluğu | **%83.6** |
-| Makro-F1 | 0.719 |
-| Çoğunluk tabanı | %75.4 |
-| Seçici doğruluk | %92.9, kapsam %68.9 |
+| Gemi bazında doğruluk | %83.6 (çoğunluk sınıfı baseline'ı %75.4) |
+| Macro-F1 | 0.719 |
+| Belirsiz modunda | kabul edilen temasların %92.9'u doğru, temasların %68.9'u kabul ediliyor |
 
-%92.9 genel test doğruluğu değil; yalnızca sistemin kabul ettiği temaslardaki performans. Temasların %31.1'i belirsiz olarak geri çevriliyor. Eşikleri test gemilerini puanlamadan önce validasyonda dondurdum.
+%92.9 genel doğruluk değil, sadece sistemin karar verdiği temaslardaki doğruluk. Eşikleri test gemilerine bakmadan validation setinde sabitledim.
 
-## Veri
-
-VLIZ'in AIS etiketli hidrofon kayıtları (CC-BY-4.0), 3 km'den yakın mesafe. Bölme MMSI'ye göre gruplu; aynı geminin kayıtları hem eğitimde hem testte olamıyor.
-
-## Operatör ekranı
-
-FastAPI arka ucu `/contacts` ve `/analyze` uç noktalarını sunuyor; Next.js arayüzünde temaslar haritada gösteriliyor, bir WAV dosyası yüklenip analiz edilebiliyor. Haritadaki geometri bir demo; gerçek AIS konumu değil.
-
-## Kapsam
-
-Bir karar destek prototipi. Sahada kullanılan bir sistem, denizaltı sınıflandırıcısı ya da hedefleme aracı değil.
+Backend FastAPI, arayüz Next.js. Haritadaki konumlar demo amaçlı, gerçek AIS konumu değil. Sahada kullanılan bir sistem değil, bir karar destek prototipi.

@@ -1,60 +1,45 @@
 ---
 title: "AvioHMI"
-tagline: "Canlı ADS-B verisiyle çalışan görev bilgisayarı, kokpit ekranı ve yer kontrol paneli."
-summary: "Bir uçak filosunu yöneten görev bilgisayarı ve onun üç istemcisi. Simülasyonla ya da OpenSky Network'ten Türkiye üzerindeki gerçek uçak trafiğiyle çalışıyor; bir sensör videosunu GPU'da işleyip canlı HUD'a basıyor."
-categories: [sys, web, cv]
-featured: true
+description: "Görev bilgisayarı + kokpit ekranı + yer kontrol paneli. OpenSky'dan canlı ADS-B çekiyor, bir sensör videosunu CUDA'da işleyip HUD'a basıyor."
+group: sistem
 order: 3
-period: Temmuz – Ağustos 2026
-year: 2026
-stack: [Java 17, C++, CUDA, JNI, FFmpeg, Flutter, React, TypeScript, WebXR, PostgreSQL/PostGIS, Docker]
-metrics:
-  - { value: '~30', label: 'gerçek uçak, canlı ADS-B' }
-  - { value: '3', label: 'istemci: web, kokpit, AR/VR' }
-  - { value: '3', label: 'CI: GitHub, GitLab, Jenkins' }
+date: "Tem – Ağu 2026"
+stack: [Java 17, C++, CUDA, JNI, FFmpeg, Flutter, React, TypeScript, PostGIS]
 repo: https://github.com/l4NGEL/AvioHMI
-cover:
-  src: /images/aviohmi/fleet-map.webp
-  alt: Yer kontrol paneli, filo ve harita sayfası; OpenSky'dan çekilen gerçek trafik
+thumb: /images/aviohmi/fleet-map.webp
 ---
 import Figure from '../../components/Figure.astro';
 import AvioArchitecture from '../../diagrams/AvioArchitecture.astro';
 
-## Ne yapıyor
+<Figure src="/images/aviohmi/fleet-map.webp" caption="Yer kontrol, Fleet & Map sayfası. Türkiye üzerindeki gerçek trafik OpenSky Network'ten geliyor." />
 
-Çekirdek, üç uçaklık bir rota simülasyonu ya da OpenSky Network'ten gelen canlı ADS-B verisiyle bir filoyu yönetiyor. Konum, hız, yön, yatış, yunuslama ve yakıt durumu her ~500 ms'de WebSocket üzerinden yayınlanıyor. Bu yayını üç ayrı istemci kullanıyor: web tabanlı yer kontrol paneli, dokunmatik kokpit ekranı ve telefonla çalışan AR / VR görünümler.
+Bir uçak filosunu yöneten bir görev bilgisayarı ve ona bağlanan üç istemci. Çekirdek ya 3 uçaklık bir rota simülasyonu ya da OpenSky Network'ten gelen gerçek ADS-B verisiyle çalışıyor. Canlı modda Türkiye üzerinde ~30 uçağı aynı anda takip edebiliyor.
 
-Paralelde, bir sensör videosundan birkaç saniyede bir kare çözülüp GPU'da Sobel kenar tespitinden geçiriliyor, üzerine lider uçağın telemetrisi basılıyor ve yer kontrolde "sensör akışı" olarak gösteriliyor.
-
-<Figure n={2} caption="Çekirdek tek doğruluk kaynağı. Turuncu hatlar canlı telemetri ve GPU üzerindeki HUD bileşimi.">
+<Figure caption="Çekirdek tek doğruluk kaynağı; istemciler WebSocket'ten besleniyor. Mavi hatlar canlı telemetri ve GPU'daki HUD işlemesi.">
   <AvioArchitecture />
 </Figure>
 
-## Çekirdek
+## Çekirdek (Java)
 
-Projede Maven ya da Gradle kullanamıyordum; bu yüzden WebSocket el sıkışması, çerçeveleme ve kapanış sırasını JDK ile elle yazdım. İstemci bağlandığında önce rota noktalarını, sonra her uçak için periyodik telemetri mesajlarını alıyor. Yatış ve yunuslama açıları, ardışık iki ölçüm arasındaki yön ve irtifa farkından sunucuda türetiliyor.
+Konum, hız, yön, roll, pitch ve yakıt her ~500 ms'de WebSocket'ten yayınlanıyor. Projede Maven ya da Gradle yoktu, o yüzden WebSocket handshake, framing ve kapanışı JDK ile elle yazdım. Roll ve pitch, ardışık iki ölçüm arasındaki yön ve irtifa farkından sunucuda hesaplanıyor.
 
-Telemetri, PostgreSQL / PostGIS erişilebilirse oraya yazılıyor; değilse çekirdek bellek içi depoya geçip bunu açılışta söylüyor. Aynı mantık her yerde geçerli: ffmpeg yoksa sentetik test karesi, GPU kütüphanesi yoksa alt süreç, çekirdek yoksa istemcide yerel simülatör. Bir parça eksik olduğunda sistem çökmek yerine daha az yetenekle çalışmaya devam ediyor.
+Telemetri PostgreSQL / PostGIS'e yazılıyor; veritabanına ulaşamazsa çekirdek bellek içi depoya geçiyor ve bunu açılışta söylüyor. Aynı yaklaşımı her yerde uyguladım: ffmpeg yoksa sentetik test karesi kullanılıyor, native kütüphane yoksa alt süreç çalışıyor, çekirdek kapalıysa istemciler yerel simülatöre düşüyor.
 
-## GPU hattı
+## GPU tarafı
 
-Sobel çekirdeği CUDA'da; etrafındaki C++ tarafı kendi GPU belleğinin ömrünü yöneten RAII sınıflarıyla yazıldı. Java bunu her karede bir süreç başlatarak değil, JNI köprüsüyle aynı süreç içinden çağırıyor. Yerel kütüphane o platform için derlenmemişse `edge_detect.exe` alt süreç olarak çalıştırılıyor.
+Çekirdek birkaç saniyede bir ffmpeg ile bir sensör videosundan kare çıkarıyor, kareyi CUDA'daki Sobel kernel'ından geçiriyor ve üstüne lider uçağın telemetrisini basıyor. C++ tarafı GPU belleğini RAII sınıflarıyla yönetiyor. Java her karede ayrı süreç başlatmak yerine bunu JNI ile aynı süreçten çağırıyor; native kütüphane o platform için derlenmemişse `edge_detect.exe` alt süreç olarak çalışıyor.
 
 ## İstemciler
 
-- **Yer kontrol (React + TypeScript):** gösterge paneli, filo haritası, tekrar oynatma, uyarılar, sensör akışı, raporlar ve ayarlar. Seçili uçak ve uyarı geçmişi sayfalar arasında korunuyor.
-- **Kokpit MFD (Flutter):** PFD, NAV ve SYS sayfaları; yapay ufuk, hız ve irtifa bantları, pusula gülü. Linux dahil birden çok platform için derleniyor.
-- **AR görünüm:** telefon kamerasının üzerine, cihazın gerçek GPS konumu ve pusula yönünden hesaplanan bir ok çiziliyor; ok gerçek bir rota noktasını gösteriyor.
-- **Uyarılar:** hız aşımı, rotadan sapma (planlı rotaya olan çapraz mesafe) ve düşük yakıt, gerçek telemetriden hesaplanıyor.
+- **Yer kontrol (React + TypeScript):** dashboard, filo haritası, playback, uyarılar, sensör akışı, raporlar. Seçili uçak ve uyarı geçmişi sayfalar arasında kaybolmuyor.
+- **Kokpit MFD (Flutter):** PFD, NAV ve SYS sayfaları. Linux dahil birkaç platform için derleniyor.
+- **AR görünüm:** Telefon kamerasının üstüne, cihazın gerçek GPS konumu ve pusulasından hesaplanan bir ok çiziyor. Ok gerçek bir waypoint'i gösteriyor, masaüstünde pusula olmadığı için sadece telefonda çalışıyor.
+- **Uyarılar:** hız aşımı, rotadan sapma (planlanan rotaya olan cross-track mesafe) ve düşük yakıt.
 
-## Güvenlik ve işletim
+<Figure src="/images/aviohmi/dashboard.webp" caption="Dashboard: filo KPI'ları, durum dağılımı, son uyarılar." />
 
-Kimlik doğrulama açıldığında çekirdek JWT ya da API anahtarı istiyor; CORS izin listesi, TLS anahtar deposu, telemetri saklama süresi ve saatlik temizlik ortam değişkenleriyle ayarlanıyor. `/metrics` bağlı istemci sayısını, kayıt sayısını ve çalışma süresini veriyor. Yer kontrol 15 saniye telemetri alamazsa yeniden bağlanıyor.
+<Figure src="/images/aviohmi/pfd.webp" caption="Kokpit MFD'nin PFD sayfası." />
 
-<Figure n={3} src="/images/aviohmi/dashboard.webp" caption="Gösterge paneli: filo KPI'ları, durum dağılımı ve son uyarılar" bare />
+## Diğer
 
-<Figure n={4} src="/images/aviohmi/pfd.webp" caption="Kokpit MFD, PFD sayfası" bare />
-
-## Testler ve CI
-
-Çekirdekte birim, WebSocket ve Postgres testleri; yer kontrolde Vitest ve Playwright uçtan uca testleri var. Aynı derleme ve test hattı GitHub Actions, GitLab CI ve Jenkins için ayrı ayrı tanımlı.
+Auth açıldığında çekirdek JWT ya da API key istiyor; CORS, TLS keystore ve telemetri saklama süresi ortam değişkenleriyle ayarlanıyor. Çekirdekte unit, WebSocket ve Postgres testleri; yer kontrolde Vitest ve Playwright testleri var. Aynı build GitHub Actions, GitLab CI ve Jenkins için ayrı ayrı tanımlı.

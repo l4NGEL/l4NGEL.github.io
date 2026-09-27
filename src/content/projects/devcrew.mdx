@@ -1,38 +1,15 @@
 ---
 title: "devcrew"
-tagline: "Bir tanımdan çalışan ve testleri geçen Python paketi üreten çok ajanlı yazılım ekibi."
-summary: "Ajanların gerçek bir çalışma alanında kod yazdığı, testleri koştuğu ve hata çıktısını okuyup düzelttiği bir döngü. \"Testler geçti\" kararını ajan değil, ondan bağımsız çalışan orkestratör veriyor."
-categories: [ai]
+description: "Bir spec'ten çalışan ve testleri geçen Python paketi yazan ajan döngüsü. Henüz ilk aşamada."
+group: ses-dil
 order: 12
-period: '2026'
-year: 2026
-status: erken aşama
+date: "2026"
 stack: [Python, Claude API, pytest]
-metrics:
-  - { value: 'M1', label: 'dört kilometre taşından ilki' }
-  - { value: '4', label: 'ajan aracı' }
+wip: true
 ---
 
-## Fikir
+Ajanların bir sandbox'ta kod yazıp `pytest` koştuğu, hata çıktısını okuyup düzelttiği bir döngü. Testler yeşile dönene ya da bütçe bitene kadar devam ediyor; bütçe biterse insana soruyor. Testlerin geçip geçmediğine ajandan bağımsız çalışan orkestratör bakıyor.
 
-Rollere ayrılmış ajanların bir yazılım görevini birlikte bitirdiği "yapay zekâ yazılım ekibi" fikri yeni değil. Benim merak ettiğim kısım doğrulamaydı: ajan kodu diske yazıyor, `pytest` koşuyor, hata çıktısını okuyup düzeltiyor; testler yeşile dönene ya da bütçe bitene kadar. "Yeşil" kararının tek kaynağı, orkestratörün ajandan bağımsız olarak koşturduğu pytest.
+Şu an ilk aşamadayım (M1): tek bir yazılımcı ajan, `write_file`, `read_file`, `list_dir` ve `run_tests` araçları, path traversal'a kapalı bir sandbox. Ajan döngüsünü SDK yardımcısı kullanmadan elle yazdım. Orkestratörü LLM olmadan, ajanı mock'layarak test ediyorum, yani testler API key istemiyor.
 
-## Şu anki durum
-
-| Katman | İş |
-|---|---|
-| Sandbox | İzole çalışma alanı; mutlak yol ve `..` reddediliyor, pytest zaman aşımıyla koşuyor |
-| Araçlar | `write_file`, `read_file`, `list_dir`, `run_tests` |
-| Ajan döngüsü | SDK yardımcısı olmadan elle yazılmış araç döngüsü, `max_steps` ile sonsuz döngü koruması |
-| Orkestratör | yaz → test döngüsü, bütçe dolunca insan onayı; bağımlılık enjeksiyonlu, LLM olmadan test ediliyor |
-| İz | Tur tur zaman çizelgesi |
-
-Testlerin hiçbiri API anahtarı istemiyor: orkestratör testleri ajanı taklit ediyor, sandbox sınırları ve pytest koşucusu gerçek çalışıyor.
-
-## Yol haritası
-
-Planlayıcı ve eleştirmen ajanlar (M2), paralel ajanlar (M3), değerlendirme altyapısı ve görselleştirme (M4).
-
-## Açık sorun
-
-Testleri de ajan yazdığı için "testler geçti" her zaman "kod doğru" anlamına gelmiyor. M2'deki eleştirmen, testlerin yeterliliğini ve tanıma uygunluğunu denetleyerek bu boşluğu daraltmak için tasarlandı.
+Açık bir sorun var: testleri de ajan yazdığı için testlerin geçmesi kodun doğru olduğunu garanti etmiyor. Sıradaki aşamada bir planlayıcı ve bir eleştirmen ajan eklemeyi düşünüyorum; eleştirmen testlerin spec'i gerçekten kapsayıp kapsamadığına bakacak.

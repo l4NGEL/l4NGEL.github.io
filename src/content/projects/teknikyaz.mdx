@@ -1,64 +1,44 @@
 ---
 title: "TeknikYaz Asistanı"
-tagline: "Türkçe teknik dokümantasyon için hibrit RAG, çok ajanlı akış ve QLoRA ile eğitilmiş bir dil modeli."
-summary: "Kendi yazdığım 127 Türkçe teknik belge üzerinde soru cevaplayan bir asistan. Retrieval, ince ayar, hizalama, halüsinasyon denetimi ve servis katmanlarının her birini ayrı ayrı ölçtüm; işe yaramayan denemeleri de sonuçlara dahil ettim."
-categories: [ai]
-order: 9
-period: Temmuz – Eylül 2026
-year: 2026
-stack: [Python, Transformers, PEFT, TRL, sentence-transformers, BM25, LangGraph, MLflow, FastAPI, Docker]
-metrics:
-  - { value: '0.66 → 1.00', label: 'P@1, 32 soruluk altın küme' }
-  - { value: '%53.8 → %92.5', label: 'davranış değerlendirmesi, 93 vaka' }
-  - { value: '%0.24', label: 'eğitilen parametre oranı, QLoRA' }
+description: "Türkçe teknik dokümanlar üzerinde soru cevaplayan RAG + QLoRA sistemi. Her katmanı ayrı ölçtüm; DPO beklediğim gibi çıkmadı."
+group: ses-dil
+order: 11
+date: "Tem – Eyl 2026"
+stack: [Python, Transformers, PEFT, LangGraph, BM25, MLflow, FastAPI]
 repo: https://github.com/l4NGEL/teknikyaz-asistan
 ---
 
-## Kapsam
-
-127 özgün Türkçe belge (README şablonları, SSS, sürüm notları, mimari dokümanlar), 146 parça. Amacım bir liderlik tablosu değil, her katmanın gerçekten çalıştığını ve hataların nasıl yakalandığını göstermekti. Belgelerin hepsini bu proje için yazdım; kazınmış ya da telifli bir korpus yok.
+Kendi yazdığım 127 Türkçe teknik doküman (README şablonları, SSS, sürüm notları, mimari dokümanlar) üzerinde soru cevaplayan bir asistan. Korpusu bu proje için yazdım, kazınmış veri yok.
 
 ## Retrieval
 
-Yoğun arama (e5) ve BM25 adayları Reciprocal Rank Fusion ile birleşiyor; cross-encoder yeniden sıralayıcı yalnızca *ek* bir skor. İlk tasarımda yeniden sıralayıcı tek hakemdi ve "README şablonu" belgesi ilk beşten düşüyordu. Füzyona geçince 32 soruluk altın kümede P@1 **0.66'dan 1.00'a**, Recall@5 1.00'a çıktı.
+Dense (e5) ve BM25 sonuçlarını Reciprocal Rank Fusion ile birleştiriyorum, cross-encoder reranker da ek bir skor olarak giriyor. İlk versiyonda reranker tek karar vericiydi ve bazı sorularda doğru şablon ilk 5'ten düşüyordu. Fusion'a geçince 32 soruluk gold sette P@1 0.66'dan 1.00'a çıktı.
 
-Bir de sessiz bir hata buldum: belge başlıkları ne embedding'e ne BM25 indeksine ulaşıyordu. Düzeltince ilgili belgeler ilk 20 aday arasında 0'dan 14'e çıktı.
+Bir de sessiz bir bug vardı: doküman başlıkları ne embedding'e ne BM25 index'ine gidiyordu. Düzeltince ilgili dokümanlar top-20 aday havuzunda 0'dan 14'e çıktı.
 
-## Ajan akışı
+## Model
 
-LangGraph ile: yönlendirici → getirme → yazar → eleştirmen (çelişki ve dayanaklılık kontrolü) → uzlaşma. Güven düşükse cevap `needs_human_review` ile insan onayına düşüyor. Eleştirmen doğal dil çıkarımı (NLI) ile cevabın bağlamdaki kaynakla desteklenip desteklenmediğine bakıyor; temel modelde tekrarlanabilir 3 halüsinasyonu bu şekilde yakaladım.
+Qwen2.5-3B-Instruct'ı QLoRA ile eğittim, parametrelerin %0.24'ü. İlk denediğim DPO (elle yazdığım birkaç örnekle) modeli değiştirmedi, üstüne her şeye "bilmiyorum" demeye başladı. Bunun üzerine korpustan kural tabanlı soru-cevap çiftleri çıkarıp SFT verisini baştan kurdum. 93 vakalık held-out değerlendirmede:
 
-| Eleştirmen, 372 çıktı | Önce | Sonra |
+| Model | Genel | Gereksiz ret |
 |---|---|---|
-| Doğru cevabın yanlışlıkla insan onayına düşmesi | %77 | %10 |
-| Kapsam dışı cevabı yakalama | %29 | %93 |
+| eski varsayılan (DPO) | %53.8 | %26.7 |
+| SFT, 1. tur | %84.9 | %4.4 |
+| SFT, 2. tur | %92.5 | %2.2 |
+| SFT 2. tur + DPO (128 çift) | %86.0 | %6.7 |
 
-## İnce ayar ve hizalama
+Son satırda DPO sonucu geriletti, o yüzden varsayılan model DPO'suz.
 
-Qwen2.5-3B-Instruct üzerinde QLoRA ile parametrelerin yalnızca %0.24'ünü eğittim. Elle yazılmış birkaç örnekle yapılan ilk DPO denemesi davranışı değiştirmedi, üstüne modeli gereğinden fazla "bilmiyorum" diyen hale getirdi. Bunun üzerine korpustan kural tabanlı soru-cevap çiftleri çıkarıp SFT verisini yeniden kurdum.
+## Kontrol katmanı
 
-| Model | Cevaplanabilir | Uydurmama | Kapsam dışı | Genel | Aşırı ret |
-|---|---|---|---|---|---|
-| eski varsayılan (DPO v2) | 57.8 | 63.3 | 41.7 | 53.8 | 26.7 |
-| SFT tur 1 | 80.0 | 96.7 | 75.0 | 84.9 | 4.4 |
-| **SFT tur 2 (varsayılan)** | 86.7 | 100 | 91.7 | **92.5** | **2.2** |
-| SFT tur 2 + DPO, 128 çift | 82.2 | 96.7 | 75.0 | 86.0 | 6.7 |
+LangGraph ile bir akış kurdum: router, retrieve, yazar, eleştirmen, uzlaşma. Eleştirmen NLI ile cevabın bağlamdaki kaynakla desteklenip desteklenmediğine bakıyor; güven düşükse cevap insan onayına gidiyor. Base modelde tekrarlanabilir 3 halüsinasyonu bu şekilde yakaladım. Ayarlamadan sonra doğru cevapların yanlışlıkla insan onayına düşme oranı %77'den %10'a indi, kapsam dışı cevapları yakalama %29'dan %93'e çıktı.
 
-Son satır önemli: 128 sentetik tercih çiftiyle yapılan DPO, SFT'ye göre geriletti. Varsayılan modeli bu yüzden DPO'suz bıraktım.
+## Diğer
 
-## Diğer ölçümler
+- Türkçe doküman sınıflandırıcısı (BERTurk): accuracy 0.955, macro F1 0.972. Bir ara accuracy yüksekken F1 0.32'ydi; weak supervision etiketlemesinde bir hata çıktı.
+- Güvenlik modülü bir süre 5 sınıflı bir modelin çıktısını 2 sınıflı sanıyordu ve hiçbir şey yakalamıyordu. 8 regression test ekleyip düzelttim.
+- 4-bit NF4 ile RTX 2080'de 64 token üretim P95 6.4 sn. DistilBERT'e distillation gecikmeyi ~%49 düşürdü.
 
-| Katman | Sonuç |
-|---|---|
-| Türkçe belge sınıflandırıcı (BERTurk) | doğruluk 0.955, makro F1 0.972 |
-| 4-bit NF4 üretim, 64 token, RTX 2080 | P95 6.4 sn, 5.8 GB VRAM |
-| DistilBERT'e damıtma | gecikme ~%49 düştü |
+## Sınırlar
 
-Sınıflandırıcıda F1 bir aşamada 0.32'ydi ama doğruluk yüksek görünüyordu; sebep zayıf denetimli etiketlemedeki sessiz bir hataydı. Güvenlik modülü de bir süre 5 sınıflı bir modelin çıktısını ikili sandığı için sessizce işlevsizdi; 8 regresyon testiyle düzelttim.
-
-## Sınırlamalar
-
-- Değerlendirme sentetik ve kural tabanlı; gerçek kullanıcı sorularında sonuç daha düşük çıkabilir. Puanlama kurallarını sonuçları gördükten sonra üç noktada düzelttim ve bunu README'de yazdım.
-- Tablo okuma zayıf; retrieval ilk iki sonuçta doğru şablonu kaçırırsa cevap da zayıflıyor.
-- NLI eleştirmeni, bağlamdan kopyalanmış ama yanlış bir cevabı yakalayamıyor.
-- 32 soruluk altın küme web ölçeğinde bir IR testi değil.
+Değerlendirme sentetik ve kural tabanlı; gerçek kullanıcı sorularında sonuç daha düşük çıkabilir. Puanlama kurallarını sonuçları gördükten sonra üç yerde düzelttim, README'de yazıyor. Tablo okuma zayıf ve NLI eleştirmeni bağlamdan kopyalanmış ama yanlış bir cevabı yakalayamıyor.

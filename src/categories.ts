@@ -4,6 +4,7 @@ export const CATEGORIES = {
   sys: 'Savunma & Sistem',
   web: 'Full-Stack & Mobil',
   sec: 'Güvenlik',
+  edu: 'Akademik',
 } as const;
 
 export type Category = keyof typeof CATEGORIES;

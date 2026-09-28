@@ -299,3 +299,16 @@ img { max-width: 100%; height: auto; display: block; }
   .menu { gap: 18px; font-size: 15px; width: 100%; }
   .menu .theme { margin-left: auto; }
 }
+
+/* Deneyim */
+.role-row { display: grid; gap: 8px 48px; padding: 28px 0; border-bottom: 1px solid var(--rule-soft); }
+@media (min-width: 900px) { .role-row { grid-template-columns: 3fr 8fr; } }
+.role-row .when { margin: 0; font-weight: 600; color: var(--ink-2); }
+.role-row .org { margin: 2px 0 0; color: var(--ink-3); font-size: 15px; }
+.role-row h3 { margin: 0; font: 600 24px/1.25 var(--serif); letter-spacing: -0.01em; }
+.role-row .sum { margin: 8px 0 0; color: var(--ink-2); max-width: 62ch; }
+.role-row ul { margin: 12px 0 0; padding-left: 20px; color: var(--ink); }
+.role-row li { margin: 5px 0; }
+.role-row li::marker { color: var(--ink-3); }
+.stack-line { margin: 12px 0 0; font-size: 14px; color: var(--ink-3); }
+.role-row > * { min-width: 0; }

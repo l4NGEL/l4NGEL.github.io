@@ -6,6 +6,7 @@ import Metrics from '../components/Metrics.astro';
 import { DIAGRAMS } from '../diagrams';
 import { CATEGORIES, type Category } from '../categories';
 import { CERTIFICATES } from '../certificates';
+import { ROLES } from '../experience';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const featured = projects.filter((p) => p.data.featured);
@@ -50,6 +51,25 @@ const pad = (n: number) => String(n).padStart(2, '0');
     </section>
 
     <div class="wrap">
+      <div class="shead">
+        <h2>Deneyim</h2>
+        <span class="label">Şirket içi projeler; ekran görüntüleri talep üzerine</span>
+      </div>
+      {ROLES.map((r) => (
+        <article class="role-row">
+          <div>
+            <p class="when">{r.when}</p>
+            <p class="org">{r.company} · {r.place}</p>
+          </div>
+          <div>
+            <h3>{r.title}</h3>
+            <p class="sum">{r.summary}</p>
+            <ul>{r.points.map((p) => <li>{p}</li>)}</ul>
+            <p class="stack-line">{r.stack.join(' · ')}</p>
+          </div>
+        </article>
+      ))}
+
       <div class="shead">
         <h2>Seçili çalışmalar</h2>
         <span class="label">{featured.length} proje</span>

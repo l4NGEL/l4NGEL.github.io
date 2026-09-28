@@ -8,7 +8,7 @@ const projects = defineCollection({
     title: z.string(),
     tagline: z.string(),
     summary: z.string(),
-    categories: z.array(z.enum(['cv', 'ai', 'sys', 'web', 'sec'])),
+    categories: z.array(z.enum(['cv', 'ai', 'sys', 'web', 'sec', 'edu'])),
     featured: z.boolean().default(false),
     order: z.number(),
     period: z.string(),

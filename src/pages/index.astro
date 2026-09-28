@@ -5,6 +5,7 @@ import Figure from '../components/Figure.astro';
 import Metrics from '../components/Metrics.astro';
 import { DIAGRAMS } from '../diagrams';
 import { CATEGORIES, type Category } from '../categories';
+import { CERTIFICATES } from '../certificates';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const featured = projects.filter((p) => p.data.featured);
@@ -41,6 +42,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
               <li><a href="https://github.com/l4NGEL" rel="noopener">GitHub</a></li>
               <li><a href="https://www.linkedin.com/in/beyza-nur-kili%C3%A7/" rel="noopener">LinkedIn</a></li>
               <li><a href="/hakkimda">Özgeçmiş</a></li>
+              <li><a href="/sertifikalar">Sertifikalar</a></li>
             </ul>
           </div>
         </div>
@@ -107,6 +109,20 @@ const pad = (n: number) => String(n).padStart(2, '0');
           </li>
         ))}
       </ol>
+
+      <div class="shead">
+        <h2>Sertifikalar</h2>
+        <a class="readmore" style="margin:0" href="/sertifikalar">Tümü ve belgeler →</a>
+      </div>
+      <ul class="cert-list">
+        {CERTIFICATES.filter((c) => c.year).map((c) => (
+          <li>
+            <b>{c.title}</b>
+            <span class="i">{c.issuer} · {c.date}</span>
+            <span class="v">{c.verify ? <a href={c.verify} target="_blank" rel="noopener">Doğrula ↗</a> : <a href="/sertifikalar">Belge</a>}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   </main>
 

@@ -1,0 +1,62 @@
+---
+import Base from '../layouts/Base.astro';
+import { CERTIFICATES } from '../certificates';
+
+const docs = CERTIFICATES.filter((c) => c.image).sort((a, b) => b.year - a.year);
+const others = CERTIFICATES.filter((c) => !c.image);
+const verifiable = CERTIFICATES.filter((c) => c.verify).length;
+---
+<Base
+  title="Sertifikalar · Beyza Nur Kılıç"
+  description="Beyza Nur Kılıç'ın sertifikaları ve doğrulama bağlantıları."
+  image="/images/sertifikalar/cyberops.webp"
+>
+  <main class="wrap">
+    <header class="p-top">
+      <p class="crumb">Özgeçmiş</p>
+      <h1 class="p-title">Sertifikalar</h1>
+      <div class="p-lead">
+        <p class="lead">
+          Ağ ve siber güvenlik, yazılım ve proje yönetimi alanlarında aldığım eğitimler. Doğrulama bağlantısı olan
+          belgeler, veren kurumun kendi sitesinde kontrol edilebilir.
+        </p>
+        <dl class="facts">
+          <dt>Toplam</dt><dd>{CERTIFICATES.length} sertifika</dd>
+          <dt>Çevrimiçi doğrulama</dt><dd>{verifiable} belge</dd>
+        </dl>
+      </div>
+    </header>
+
+    <div class="shead"><h2>Belgeler</h2><span class="label">{docs.length}</span></div>
+    <div class="certs">
+      {docs.map((c) => (
+        <article class="cert">
+          <a class="cert-img" href={c.image} target="_blank" rel="noopener" aria-label={`${c.title} belgesini büyük aç`}>
+            <img src={c.image} alt={`${c.title} sertifikası`} loading="lazy" decoding="async" />
+          </a>
+          <div class="cert-body">
+            <h3>{c.title}</h3>
+            <p class="cert-issuer">{c.issuer} <span>· {c.date}</span></p>
+            {c.detail && <p class="cert-detail">{c.detail}</p>}
+            <p class="cert-links">
+              {c.verify && <a href={c.verify} target="_blank" rel="noopener">Doğrula ↗</a>}
+              <a href={c.image} target="_blank" rel="noopener">Belgeyi görüntüle</a>
+              {c.id && <span class="cert-id">No: {c.id}</span>}
+            </p>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <div class="shead"><h2>Diğer eğitimler</h2><span class="label">belge talep üzerine</span></div>
+    <ul class="cert-list">
+      {others.map((c) => (
+        <li>
+          <b>{c.title}</b>
+          <span class="i">{c.issuer}{c.date && ` · ${c.date}`}</span>
+          <span class="v" style="color:var(--ink-3)">{c.detail}</span>
+        </li>
+      ))}
+    </ul>
+  </main>
+</Base>

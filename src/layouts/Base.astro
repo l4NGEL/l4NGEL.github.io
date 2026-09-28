@@ -47,6 +47,7 @@ const onWork = path === '/' || path.startsWith('/projeler');
         <a class="mark" href="/">Beyza Nur Kılıç</a>
         <nav class="menu" aria-label="Site">
           <a href="/" aria-current={onWork ? 'page' : undefined}>Projeler</a>
+          <a href="/sertifikalar" aria-current={path === '/sertifikalar' ? 'page' : undefined}>Sertifikalar</a>
           <a href="/hakkimda" aria-current={path === '/hakkimda' ? 'page' : undefined}>Hakkımda</a>
           <button class="theme" id="theme" type="button" aria-label="Açık/koyu tema">
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M7 1a6 6 0 0 1 0 12z" fill="currentColor"/></svg>

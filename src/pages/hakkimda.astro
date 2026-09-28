@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import { CERTIFICATES } from '../certificates';
 
 const skills = [
   ['Diller', 'Python, C++17, C#, Java, TypeScript, Rust, Dart, SQL'],
@@ -46,6 +47,13 @@ const skills = [
         <span class="when">2021 · 2025</span>
         <div><b>Bilgisayar Mühendisliği, Lisans</b><p>Bursa Uludağ Üniversitesi · GPA 3.40 / 4.00</p></div>
       </li>
+    </ul>
+
+    <div class="shead"><h2>Sertifikalar</h2><a class="readmore" style="margin:0" href="/sertifikalar">Belgeler ve doğrulama →</a></div>
+    <ul class="cv-list">
+      {CERTIFICATES.map((c) => (
+        <li><span class="when">{c.date || '·'}</span><div><b>{c.title}</b><p>{c.issuer}</p></div></li>
+      ))}
     </ul>
 
     <div class="shead"><h2>Nasıl çalışıyorum</h2></div>

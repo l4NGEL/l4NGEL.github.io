@@ -39,9 +39,9 @@ const pad = (n: number) => String(n).padStart(2, '0');
         <dl class="facts">
           <dt>Dönem</dt><dd>{d.period}</dd>
           <dt>Alan</dt><dd>{d.categories.map((c) => CATEGORIES[c]).join(', ')}</dd>
-          <dt>Rol</dt><dd>Tek kişilik proje: tasarım, kod, test, değerlendirme</dd>
+          <dt>Rol</dt><dd>{d.role}</dd>
           <dt>Teknoloji</dt><dd>{d.stack.join(', ')}</dd>
-          <dt>Kod</dt><dd>{d.repo ? <a href={d.repo} rel="noopener">{d.repo.replace('https://', '')}</a> : 'Talep üzerine paylaşılır'}</dd>
+          <dt>Kod</dt><dd>{d.repo ? <a href={d.repo} rel="noopener">{d.repo.replace('https://', '')}</a> : d.codeNote ?? 'Talep üzerine paylaşılır'}</dd>
         </dl>
       </div>
       <Metrics items={d.metrics} class="p-metrics" />

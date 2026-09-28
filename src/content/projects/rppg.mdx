@@ -1,0 +1,37 @@
+---
+title: "Kameradan Temassız Nabız Ölçümü (rPPG)"
+tagline: "Sıradan bir RGB kameradan, yüzdeki renk değişimlerinden kalp atış hızını CHROM ve POS yöntemleriyle çıkaran ekip projesi."
+summary: "Lisans döneminde ekip olarak geliştirdiğimiz, kameraya bakan bir kişinin nabzını hiçbir sensör takmadan ölçen bir sistem. Kalp her attığında yüz derisindeki kan hacmi çok az değişiyor ve bu, gözle görülmeyen bir renk dalgalanması olarak kameraya yansıyor. Bu dalgalanmayı CHROM ve POS yöntemleriyle ayrıştırıp nabza çevirdik."
+categories: [edu, cv, ai]
+order: 19
+period: "Lisans, ekip projesi"
+year: 2025
+role: "Dört kişilik ekip projesi"
+codeNote: "Paylaşılmıyor"
+stack: [rPPG, CHROM, POS, Sinyal işleme, Bilgisayarlı görü]
+---
+
+## Fikir
+
+Nabız normalde parmağa takılan bir oksimetre ya da göğse yapıştırılan EKG elektrotlarıyla ölçülür. Uzaktan fotopletismografi (rPPG) aynı bilgiyi temas olmadan, sıradan bir kameradan almayı hedefler. Kalp her attığında deri altındaki kılcal damarlardaki kan hacmi artar, kan ışığı çevre dokudan daha fazla soğurduğu için derinin rengi çok az değişir. Bu değişim gözle görülemeyecek kadar küçüktür ama kameranın piksel değerlerinde ölçülebilir bir dalgalanma olarak görünür.
+
+Bu tür bir ölçüm hasta ve yenidoğan takibi, sürücü izleme, egzersiz sırasında takip ve tele-tıp gibi alanlarda kullanılabiliyor.
+
+## Yöntem
+
+Kameradan alınan her karede yüz bulunup nabız sinyalinin en güçlü olduğu deri bölgeleri (alın ve yanaklar) seçiliyor. Bu bölgelerin kırmızı, yeşil ve mavi kanal ortalamaları zamana göre bir sinyale dönüşüyor. Ham sinyalde nabzın yanında ışık değişimleri ve baş hareketleri de var; asıl iş, bu karışımdan nabız bileşenini ayırmak.
+
+Bunun için iki yerleşik yöntem kullandık:
+
+| Yöntem | Nasıl ayırıyor |
+|---|---|
+| **CHROM** (krominans tabanlı) | Renk kanallarını parlaklık ve yansıma değişimlerinin etkisini azaltan iki krominans sinyaline dönüştürüp, ağırlıklarını her pencerede sinyallerin varyansına göre ayarlayarak birleştiriyor |
+| **POS** (plane-orthogonal-to-skin) | Normalize edilmiş renk sinyalini, derinin kendi renk yönüne dik bir düzleme izdüşürüyor; ışık şiddetindeki değişim bu düzlemde büyük ölçüde kayboluyor, nabız kaynaklı değişim kalıyor |
+
+Elde edilen sinyal, insan nabzının bulunabileceği frekans aralığında filtrelenip frekans alanında en baskın tepe bulunarak dakikadaki atım sayısına çevriliyor.
+
+## Araştırma önerisi
+
+Bu projenin devamı olarak, 2024 güz döneminde TÜBİTAK 2209-A programına dört kişilik ekip olarak bir araştırma önerisi hazırladık: farklı kapatıcılık seviyelerindeki fondötenin kameradan nabız ölçümünü ne kadar bozduğunu incelemek. Makyaj, deriye giren ve geri yansıyan ışığı ince bir filtre gibi azalttığı için rPPG'nin en az çalışılmış hata kaynaklarından biri. Tasarımda makyajsız, az, orta ve çok kapatıcı dört koşul, nabız oksimetresi referans ölçüm olarak ve Bland-Altman, MAE, RMSE ve korelasyonla doğrulama vardı. Öneri destek almadığı için bu deney yapılamadı.
+
+Danışmanımız Prof. Dr. Kemal Fidanboylu'ydu.

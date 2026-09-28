@@ -16,6 +16,8 @@ const projects = defineCollection({
     status: z.string().optional(),
     stack: z.array(z.string()),
     metrics: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
+    role: z.string().default('Tek kişilik proje: tasarım, kod, test, değerlendirme'),
+    codeNote: z.string().optional(),
     repo: z.string().url().optional(),
     cover: z.object({ src: z.string(), alt: z.string() }).optional(),
     diagram: z.string().optional(),

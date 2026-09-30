@@ -1,0 +1,125 @@
+---
+// Açılış ekranının arka planı: yavaşça dolaşan hedefler, üzerlerinde takip kutuları ve
+// iz numaraları, yakın hedefler arasında ince bağlantılar. İmleç en yakın hedefi "kilitler".
+// "Hareketi azalt" açıksa tek bir durağan kare çizilir.
+---
+<canvas class="hero-bg" aria-hidden="true"></canvas>
+
+<script>
+  const canvas = document.querySelector<HTMLCanvasElement>('.hero-bg')!;
+  const ctx = canvas.getContext('2d')!;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  type T = { x: number; y: number; vx: number; vy: number; s: number; id: number; trail: [number, number][]; hot: boolean };
+  let W = 0, H = 0, dpr = 1;
+  let targets: T[] = [];
+  let mouse: { x: number; y: number } | null = null;
+  let running = false;
+  let colors = { ink: '#6b717b', accent: '#1f4f82' };
+
+  const readColors = () => {
+    const cs = getComputedStyle(document.documentElement);
+    colors = { ink: cs.getPropertyValue('--ink-3').trim() || colors.ink, accent: cs.getPropertyValue('--accent').trim() || colors.accent };
+  };
+
+  function resize() {
+    const r = canvas.getBoundingClientRect();
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = r.width; H = r.height;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const n = Math.max(7, Math.min(18, Math.round((W * H) / 70000)));
+    if (targets.length !== n) {
+      targets = Array.from({ length: n }, (_, i) => ({
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35,
+        s: 22 + Math.random() * 20, id: 3 + i * 4 + Math.floor(Math.random() * 3),
+        trail: [], hot: i < 2,
+      }));
+    }
+  }
+
+  function step() {
+    for (const t of targets) {
+      // Hafif rastgele yön değişimi, hız sınırı, kenardan yumuşak dönüş
+      t.vx += (Math.random() - 0.5) * 0.02; t.vy += (Math.random() - 0.5) * 0.02;
+      const sp = Math.hypot(t.vx, t.vy), max = 0.45;
+      if (sp > max) { t.vx *= max / sp; t.vy *= max / sp; }
+      if (t.x < 30) t.vx += 0.02; if (t.x > W - 30) t.vx -= 0.02;
+      if (t.y < 30) t.vy += 0.02; if (t.y > H - 30) t.vy -= 0.02;
+      t.x += t.vx; t.y += t.vy;
+      t.trail.push([t.x, t.y]);
+      if (t.trail.length > 40) t.trail.shift();
+    }
+  }
+
+  function bracket(x: number, y: number, s: number) {
+    const h = s / 2, c = Math.max(5, s * 0.28);
+    ctx.beginPath();
+    ctx.moveTo(x - h, y - h + c); ctx.lineTo(x - h, y - h); ctx.lineTo(x - h + c, y - h);
+    ctx.moveTo(x + h - c, y - h); ctx.lineTo(x + h, y - h); ctx.lineTo(x + h, y - h + c);
+    ctx.moveTo(x + h, y + h - c); ctx.lineTo(x + h, y + h); ctx.lineTo(x + h - c, y + h);
+    ctx.moveTo(x - h + c, y + h); ctx.lineTo(x - h, y + h); ctx.lineTo(x - h, y + h - c);
+    ctx.stroke();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    // Kilitlenen hedef: imlece en yakın olan
+    let lock: T | null = null;
+    if (mouse) {
+      let best = 170;
+      for (const t of targets) { const d = Math.hypot(t.x - mouse.x, t.y - mouse.y); if (d < best) { best = d; lock = t; } }
+    }
+    // Bağlantılar
+    ctx.lineWidth = 1;
+    for (let i = 0; i < targets.length; i++) for (let j = i + 1; j < targets.length; j++) {
+      const a = targets[i], b = targets[j], d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (d > 170) continue;
+      ctx.globalAlpha = (1 - d / 170) * 0.16;
+      ctx.strokeStyle = colors.ink;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+    ctx.font = '10px "Source Code Pro", monospace';
+    for (const t of targets) {
+      const on = t === lock, col = on || t.hot ? colors.accent : colors.ink;
+      // İz
+      ctx.strokeStyle = col; ctx.globalAlpha = on ? 0.45 : 0.18;
+      ctx.beginPath();
+      t.trail.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      ctx.stroke();
+      // Nokta, kutu, etiket
+      ctx.globalAlpha = on ? 0.95 : t.hot ? 0.55 : 0.4;
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(t.x, t.y, on ? 2.6 : 1.8, 0, Math.PI * 2); ctx.fill();
+      ctx.lineWidth = on ? 1.6 : 1.1;
+      bracket(t.x, t.y, on ? t.s + 8 : t.s);
+      ctx.lineWidth = 1;
+      ctx.fillText(`ID ${String(t.id).padStart(2, '0')}${on ? ' · takipte' : ''}`, t.x + t.s / 2 + 5, t.y - t.s / 2 + 8);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function loop() {
+    if (!running) return;
+    step(); draw();
+    requestAnimationFrame(loop);
+  }
+  const start = () => { if (!running && !reduce) { running = true; requestAnimationFrame(loop); } };
+  const stop = () => { running = false; };
+
+  readColors(); resize();
+  if (reduce) { for (let i = 0; i < 60; i++) step(); draw(); }
+  else start();
+
+  addEventListener('resize', () => { resize(); if (reduce) draw(); });
+  // Görünmüyorsa (aşağı kaydırıldı ya da sekme arkada) çizimi durdur
+  new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop())).observe(canvas);
+  document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  // Tema değişince renkleri yeniden oku
+  new MutationObserver(() => { readColors(); if (reduce) draw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readColors(); if (reduce) draw(); });
+  const hero = canvas.parentElement!;
+  hero.addEventListener('pointermove', (e) => { const r = canvas.getBoundingClientRect(); mouse = { x: e.clientX - r.left, y: e.clientY - r.top }; });
+  hero.addEventListener('pointerleave', () => (mouse = null));
+</script>

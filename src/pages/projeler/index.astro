@@ -1,0 +1,55 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { CATEGORIES, type Category } from '../../categories';
+
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const count = (c: Category) => projects.filter((p) => p.data.categories.includes(c)).length;
+const open = projects.filter((p) => p.data.repo).length;
+---
+<Base
+  title="Projeler · Beyza Nur Kılıç"
+  description="Bilgisayarlı görü, yapay zekâ, savunma ve sistem yazılımı, full-stack, güvenlik ve akademik projeler."
+  image="/images/autotrack/demo.webp"
+>
+  <main class="wrap">
+    <header class="p-top">
+      <p class="crumb"><a href="/">← Ana sayfa</a></p>
+      <h1 class="p-title">Projeler</h1>
+      <div class="p-lead">
+        <p class="lead">
+          Kişisel, akademik ve ekip projelerim. Her birinin sayfasında ne yaptığımı, nasıl ölçtüğümü ve neyin
+          beklediğim gibi çıkmadığını anlattım.
+        </p>
+        <dl class="facts">
+          <dt>Toplam</dt><dd>{projects.length} proje</dd>
+          <dt>Açık kaynak</dt><dd>{open} proje GitHub'da</dd>
+          <dt>Diğerleri</dt><dd>Kod talep üzerine paylaşılır</dd>
+        </dl>
+      </div>
+    </header>
+
+    <div class="filters" id="filters" role="group" aria-label="Alana göre filtrele">
+      <button type="button" data-f="all" aria-pressed="true">Tümü<sup>{projects.length}</sup></button>
+      {(Object.keys(CATEGORIES) as Category[]).map((c) => (
+        <button type="button" data-f={c} aria-pressed="false">{CATEGORIES[c]}<sup>{count(c)}</sup></button>
+      ))}
+    </div>
+    <ol class="index">
+      {projects.map((p) => (
+        <li data-cat={p.data.categories.join(' ')}>
+          <a class="row" href={`/projeler/${p.id}`}>
+            <span class="n"></span>
+            <span class="t" style={`view-transition-name: p-${p.id}`}>{p.data.title}</span>
+            <span class="d">{p.data.tagline}</span>
+            <span class="m">
+              {p.data.status ? <span class="tag-status">{p.data.status}</span> : p.data.year}
+              {' · '}{p.data.repo ? 'açık kaynak' : 'özel repo'}
+            </span>
+            <span class="arrow" aria-hidden="true">→</span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </main>
+</Base>

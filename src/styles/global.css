@@ -312,3 +312,126 @@ img { max-width: 100%; height: auto; display: block; }
 .role-row li::marker { color: var(--ink-3); }
 .stack-line { margin: 12px 0 0; font-size: 14px; color: var(--ink-3); }
 .role-row > * { min-width: 0; }
+
+/* ------------------------------------------------------------
+   Hareket
+   ------------------------------------------------------------ */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
+  backdrop-filter: saturate(1.4) blur(10px);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  view-transition-name: topbar;
+}
+.scrolled .topbar { box-shadow: 0 1px 0 var(--rule), 0 8px 24px -18px rgba(0, 0, 0, 0.35); border-bottom-color: transparent; }
+@media (min-width: 1040px) { .toc { top: 92px; } }
+.prose h2 { scroll-margin-top: 88px; }
+
+.progress {
+  position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 30;
+  background: var(--accent); transform: scaleX(0); transform-origin: 0 50%;
+  pointer-events: none; view-transition-name: progress;
+}
+
+/* Etkileşim geri bildirimi (her durumda) */
+.readmore {
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1.5px no-repeat;
+  padding-bottom: 2px; transition: background-size 0.35s ease, color 0.2s ease;
+}
+.readmore:hover { background-size: 100% 1.5px; text-decoration: none; }
+.row .arrow, .row .t { transition: transform 0.3s ease, color 0.2s ease; }
+.row:hover .arrow { transform: translateX(4px); }
+.row { transition: background-color 0.25s ease; }
+.filters button { transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+.toc a { transition: color 0.2s ease, border-color 0.25s ease; }
+.cert { transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; }
+.cert:hover { transform: translateY(-3px); box-shadow: 0 14px 30px -20px rgba(0, 0, 0, 0.4); border-color: var(--ink-3); }
+.fig-frame img { transition: transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.work:hover .fig-frame img { transform: scale(1.015); }
+.metric { transition: border-color 0.25s ease; }
+.metric:hover { border-color: var(--ink-3); }
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+
+  /* Kaydırınca belirme */
+  .js-motion:not(.motion-fallback) :is(.shead, .work, .role-row, .index li, .cert, .cert-list li, .cv-list li,
+    .p-metrics, .p-cover, .toc, .prose > *, .certs, .next):not(.in) {
+    opacity: 0; transform: translateY(18px);
+  }
+  :is(.shead, .work, .role-row, .index li, .cert-list li, .cv-list li, .p-metrics, .p-cover, .toc, .prose > *, .certs, .next) {
+    transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .cert { transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease; }
+
+  /* Açılış: isim ve tanıtım sırayla gelir */
+  .js-motion :is(.masthead h1, .masthead .role, .intro > *, .p-top .crumb, .p-lead > *) {
+    animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .js-motion .masthead .role, .js-motion .p-lead > :first-child { animation-delay: 0.08s; }
+  .js-motion .intro > :nth-child(1), .js-motion .p-lead > :nth-child(2) { animation-delay: 0.16s; }
+  .js-motion .intro > :nth-child(2) { animation-delay: 0.24s; }
+  .js-motion .intro > :nth-child(3) { animation-delay: 0.32s; }
+
+  /* Filtre değişince satırlar yeniden dizilir */
+  .index li.refilter { animation: rise-sm 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+  /* Sayfalar arası geçiş; proje başlığı dizinden sayfaya kayar */
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root) { animation: vt-out 0.22s ease both; }
+  ::view-transition-new(root) { animation: vt-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+  ::view-transition-group(*) { animation-duration: 0.5s; animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1); }
+}
+
+@keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes rise-sm { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes vt-out { to { opacity: 0; transform: translateY(-6px); } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(10px); } }
+@keyframes dg-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dg-draw { to { stroke-dashoffset: 0; } }
+@keyframes dg-pop { from { opacity: 0; transform: scale(0); } to { opacity: 1; transform: scale(1); } }
+
+/* ------------------------------------------------------------
+   Açılış ekranı
+   ------------------------------------------------------------ */
+.hero {
+  position: relative; overflow: hidden; padding: 0;
+  min-height: calc(100vh - 64px); min-height: calc(100svh - 64px);
+  display: flex; flex-direction: column;
+}
+.hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.hero-bg {
+  /* Metnin olduğu bölgede animasyon soluk, kenarlara doğru belirgin */
+  -webkit-mask-image: radial-gradient(ellipse 62% 58% at 36% 50%, rgba(0, 0, 0, 0.18) 0%, rgba(0, 0, 0, 0.35) 45%, #000 85%);
+  mask-image: radial-gradient(ellipse 62% 58% at 36% 50%, rgba(0, 0, 0, 0.18) 0%, rgba(0, 0, 0, 0.35) 45%, #000 85%);
+}
+.hero-inner { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; justify-content: center; padding-top: 56px; padding-bottom: 40px; width: 100%; }
+.hero .masthead-h1, .hero h1 { font-size: clamp(46px, 7.6vw, 92px); line-height: 1.02; }
+.hero .role { font-size: clamp(18px, 1.6vw, 22px); }
+.hero-foot { position: relative; z-index: 1; border-top: 1px solid var(--rule-soft); }
+
+/* Teknoloji logoları: yavaş kayan şerit */
+.tech { overflow: hidden; padding: 18px 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.tech-track { display: flex; width: max-content; }
+.tech-list { display: flex; gap: 34px; list-style: none; margin: 0; padding: 0 17px; }
+.tech-list li { display: flex; align-items: center; gap: 9px; color: var(--ink-3); white-space: nowrap; font-size: 14px; transition: color 0.25s ease; }
+.tech-list svg { fill: currentColor; flex: none; }
+.tech-list li:hover { color: var(--ink); }
+.scroll-cue { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -14px); width: 26px; height: 40px; border: 1.5px solid var(--ink-3); border-radius: 14px; opacity: 0.7; }
+.scroll-cue span { position: absolute; left: 50%; top: 8px; width: 3px; height: 7px; margin-left: -1.5px; border-radius: 2px; background: var(--ink-3); }
+.scroll-cue:hover { opacity: 1; }
+@media (max-width: 700px) { .scroll-cue { display: none; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .tech-track { animation: marquee 60s linear infinite; }
+  .tech:hover .tech-track { animation-play-state: paused; }
+  .scroll-cue span { animation: cue 1.8s ease-in-out infinite; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tech-track { width: auto; }
+  .tech-list { flex-wrap: wrap; row-gap: 12px; }
+  .tech-list[aria-hidden] { display: none; }
+}
+@keyframes marquee { to { transform: translateX(-50%); } }
+@keyframes cue { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(12px); opacity: 0; } 100% { opacity: 0; } }

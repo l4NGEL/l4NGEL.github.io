@@ -1,0 +1,26 @@
+---
+// Projelerde gerçekten kullandığım teknolojilerin logoları (Simple Icons, CC0).
+import * as si from 'simple-icons';
+
+const keys = [
+  'siPython', 'siCplusplus', 'siDotnet', 'siOpenjdk', 'siRust', 'siTypescript',
+  'siPytorch', 'siOpencv', 'siNvidia', 'siOnnx', 'siTensorflow', 'siHuggingface', 'siScikitlearn',
+  'siReact', 'siFlutter', 'siKotlin', 'siSwift', 'siNodedotjs', 'siFastapi', 'siFlask',
+  'siPostgresql', 'siRedis', 'siDocker', 'siRos', 'siLinux', 'siGit', 'siGithubactions',
+] as const;
+const icons = keys.map((k) => (si as unknown as Record<string, { title: string; path: string }>)[k]).filter(Boolean);
+---
+<div class="tech" aria-label="Kullandığım teknolojiler">
+  <div class="tech-track">
+    {[0, 1].map((copy) => (
+      <ul class="tech-list" aria-hidden={copy === 1 ? 'true' : undefined}>
+        {icons.map((i) => (
+          <li title={i.title}>
+            <svg viewBox="0 0 24 24" width="22" height="22" role="img" aria-label={i.title}><path d={i.path} /></svg>
+            {i.title !== '.NET' && <span>{i.title}</span>}
+          </li>
+        ))}
+      </ul>
+    ))}
+  </div>
+</div>

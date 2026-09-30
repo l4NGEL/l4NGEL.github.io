@@ -29,8 +29,8 @@ const pad = (n: number) => String(n).padStart(2, '0');
 <Base title={`${d.title} · Beyza Nur Kılıç`} description={d.tagline} image={d.cover?.src}>
   <main class="wrap">
     <header class="p-top">
-      <p class="crumb"><a href="/">← Tüm projeler</a></p>
-      <h1 class="p-title">{d.title}</h1>
+      <p class="crumb"><a href="/projeler">← Tüm projeler</a></p>
+      <h1 class="p-title" style={`view-transition-name: p-${project.id}`}>{d.title}</h1>
       <div class="p-lead">
         <div>
           {d.status && <span class="status">{d.status}</span>}

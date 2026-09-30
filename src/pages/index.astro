@@ -7,11 +7,12 @@ import { DIAGRAMS } from '../diagrams';
 import { CATEGORIES, type Category } from '../categories';
 import { CERTIFICATES } from '../certificates';
 import { ROLES } from '../experience';
+import HeroCanvas from '../components/HeroCanvas.astro';
+import TechStrip from '../components/TechStrip.astro';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const featured = projects.filter((p) => p.data.featured);
-const count = (c: Category) => projects.filter((p) => p.data.categories.includes(c)).length;
-const pad = (n: number) => String(n).padStart(2, '0');
+const recent = projects.filter((p) => !p.data.featured).sort((a, b) => b.data.year - a.data.year || a.data.order - b.data.order).slice(0, 6);
 ---
 <Base
   title="Beyza Nur Kılıç · Bilgisayar Mühendisi"
@@ -19,8 +20,9 @@ const pad = (n: number) => String(n).padStart(2, '0');
   image="/images/autotrack/demo.webp"
 >
   <main>
-    <section class="masthead">
-      <div class="wrap">
+    <section class="masthead hero">
+      <HeroCanvas />
+      <div class="wrap hero-inner">
         <h1>Beyza Nur Kılıç</h1>
         <p class="role">Bilgisayar Mühendisi · Bilgisayarlı görü, yapay zekâ ve sistem yazılımı</p>
         <div class="intro">
@@ -48,9 +50,13 @@ const pad = (n: number) => String(n).padStart(2, '0');
           </div>
         </div>
       </div>
+      <div class="hero-foot">
+        <TechStrip />
+        <a class="scroll-cue" href="#icerik" aria-label="Aşağı kaydır"><span></span></a>
+      </div>
     </section>
 
-    <div class="wrap">
+    <div class="wrap" id="icerik">
       <div class="shead">
         <h2>Deneyim</h2>
         <span class="label">Şirket içi projeler; ekran görüntüleri talep üzerine</span>
@@ -82,7 +88,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
           <article class:list={['work', { flip: i % 2 === 1 }]}>
             <div class="work-text">
               <span class="work-no">{d.categories.map((c) => CATEGORIES[c]).join(' · ')}</span>
-              <h3><a href={`/projeler/${p.id}`}>{d.title}</a></h3>
+              <h3 style={`view-transition-name: p-${p.id}`}><a href={`/projeler/${p.id}`}>{d.title}</a></h3>
               <p class="sum">{d.summary}</p>
               <dl class="facts">
                 <dt>Dönem</dt><dd>{d.period}</dd>
@@ -104,21 +110,15 @@ const pad = (n: number) => String(n).padStart(2, '0');
       })}
 
       <div class="shead">
-        <h2>Tüm projeler</h2>
-        <span class="label">{projects.length} proje</span>
-      </div>
-      <div class="filters" id="filters" role="group" aria-label="Alana göre filtrele">
-        <button type="button" data-f="all" aria-pressed="true">Tümü<sup>{projects.length}</sup></button>
-        {(Object.keys(CATEGORIES) as Category[]).map((c) => (
-          <button type="button" data-f={c} aria-pressed="false">{CATEGORIES[c]}<sup>{count(c)}</sup></button>
-        ))}
+        <h2>Diğer projeler</h2>
+        <a class="readmore" style="margin:0" href="/projeler">Tüm projeler ({projects.length}) →</a>
       </div>
       <ol class="index">
-        {projects.map((p) => (
-          <li data-cat={p.data.categories.join(' ')}>
+        {recent.map((p) => (
+          <li>
             <a class="row" href={`/projeler/${p.id}`}>
-              <span class="n">{pad(p.data.order)}</span>
-              <span class="t">{p.data.title}</span>
+              <span class="n"></span>
+              <span class="t" style={`view-transition-name: p-${p.id}`}>{p.data.title}</span>
               <span class="d">{p.data.tagline}</span>
               <span class="m">
                 {p.data.status ? <span class="tag-status">{p.data.status}</span> : p.data.year}
@@ -129,6 +129,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
           </li>
         ))}
       </ol>
+      <p style="margin:22px 0 0"><a class="readmore" href="/projeler">Bütün projeleri alana göre filtreleyerek gör →</a></p>
 
       <div class="shead">
         <h2>Sertifikalar</h2>
@@ -146,15 +147,4 @@ const pad = (n: number) => String(n).padStart(2, '0');
     </div>
   </main>
 
-  <script>
-    const rows = [...document.querySelectorAll<HTMLElement>('.index li')];
-    const btns = [...document.querySelectorAll<HTMLButtonElement>('#filters button')];
-    for (const b of btns) {
-      b.addEventListener('click', () => {
-        const f = b.dataset.f!;
-        btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-        rows.forEach((r) => (r.hidden = f !== 'all' && !r.dataset.cat!.split(' ').includes(f)));
-      });
-    }
-  </script>
 </Base>

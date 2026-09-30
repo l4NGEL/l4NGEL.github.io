@@ -11,7 +11,7 @@ const { title, description, image } = Astro.props;
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = image ? new URL(image, Astro.site).href : undefined;
-const onWork = path === '/' || path.startsWith('/projeler');
+const onWork = path.startsWith('/projeler');
 ---
 <!doctype html>
 <html lang="tr">
@@ -39,6 +39,15 @@ const onWork = path === '/' || path.startsWith('/projeler');
         const t = localStorage.getItem('theme');
         if (t) document.documentElement.dataset.theme = t;
       } catch (e) {}
+      // Kaydırınca belirme efektleri için içeriği ilk boyamadan önce gizle.
+      // Betik yüklenmezse 2.5 sn sonra her şey görünür olur.
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.classList.add('js-motion');
+        setTimeout(() => {
+          const cl = document.documentElement.classList;
+          if (!cl.contains('motion-ready')) cl.add('motion-fallback');
+        }, 2500);
+      }
     </script>
   </head>
   <body>
@@ -46,7 +55,7 @@ const onWork = path === '/' || path.startsWith('/projeler');
       <div class="wrap">
         <a class="mark" href="/">Beyza Nur Kılıç</a>
         <nav class="menu" aria-label="Site">
-          <a href="/" aria-current={onWork ? 'page' : undefined}>Projeler</a>
+          <a href="/projeler" aria-current={onWork ? 'page' : undefined}>Projeler</a>
           <a href="/sertifikalar" aria-current={path === '/sertifikalar' ? 'page' : undefined}>Sertifikalar</a>
           <a href="/hakkimda" aria-current={path === '/hakkimda' ? 'page' : undefined}>Hakkımda</a>
           <button class="theme" id="theme" type="button" aria-label="Açık/koyu tema">
@@ -55,6 +64,7 @@ const onWork = path === '/' || path.startsWith('/projeler');
         </nav>
       </div>
     </header>
+    <div class="progress" aria-hidden="true"></div>
 
     <slot />
 
@@ -72,15 +82,8 @@ const onWork = path === '/' || path.startsWith('/projeler');
       </div>
     </footer>
 
-    <script is:inline>
-      document.getElementById('theme').addEventListener('click', () => {
-        const root = document.documentElement;
-        const dark = root.dataset.theme
-          ? root.dataset.theme === 'dark'
-          : matchMedia('(prefers-color-scheme: dark)').matches;
-        root.dataset.theme = dark ? 'light' : 'dark';
-        try { localStorage.setItem('theme', root.dataset.theme); } catch (e) {}
-      });
+    <script>
+      import '../scripts/motion';
     </script>
   </body>
 </html>

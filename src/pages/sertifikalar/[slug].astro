@@ -1,0 +1,57 @@
+---
+import Base from '../../layouts/Base.astro';
+import { CERTIFICATES, type Certificate } from '../../certificates';
+
+export function getStaticPaths() {
+  return CERTIFICATES.flatMap((cert) =>
+    cert.slug && cert.parts?.length ? [{ params: { slug: cert.slug }, props: { cert } }] : [],
+  );
+}
+
+interface Props {
+  cert: Certificate;
+}
+
+const { cert } = Astro.props;
+const parts = cert.parts ?? [];
+---
+<Base
+  title={`${cert.title} · Beyza Nur Kılıç`}
+  description={`${cert.title}, ${cert.issuer}. ${parts.length} sertifika.`}
+  image={parts[0]?.image}
+>
+  <main class="wrap">
+    <header class="p-top">
+      <p class="crumb"><a href="/sertifikalar">← Sertifikalar</a></p>
+      <h1 class="p-title">{cert.title}</h1>
+      <div class="p-lead">
+        <p class="lead">
+          {cert.issuer}{cert.detail ? ` · ${cert.detail}` : ''}. {parts.length} belgenin tamamı aşağıda.
+        </p>
+        <dl class="facts">
+          <dt>Belge</dt><dd>{parts.length} sertifika</dd>
+          {cert.date && <dt>Tarih</dt>}
+          {cert.date && <dd>{cert.date}</dd>}
+        </dl>
+      </div>
+    </header>
+
+    <div class="certs">
+      {parts.map((part) => (
+        <article class="cert">
+          <a class="cert-img" href={part.image} target="_blank" rel="noopener" aria-label={`${part.title} belgesini büyük aç`}>
+            <img src={part.image} alt={`${part.title} sertifikası`} loading="lazy" decoding="async" />
+          </a>
+          <div class="cert-body">
+            <p class="cert-area">{cert.area}</p>
+            <h3>{part.title}</h3>
+            <p class="cert-issuer">{cert.issuer}{cert.date && <span> · {cert.date}</span>}</p>
+            <p class="cert-links">
+              <a href={part.image} target="_blank" rel="noopener">Belgeyi görüntüle</a>
+            </p>
+          </div>
+        </article>
+      ))}
+    </div>
+  </main>
+</Base>

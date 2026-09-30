@@ -57,7 +57,13 @@ const skills = [
     <div class="shead"><h2>Sertifikalar</h2><a class="readmore" style="margin:0" href="/sertifikalar">Belgeler ve doğrulama →</a></div>
     <ul class="cv-list">
       {CERTIFICATES.map((c) => (
-        <li><span class="when">{c.date || '·'}</span><div><b>{c.title}</b><p>{c.issuer}</p></div></li>
+        <li>
+          <span class="when">{c.date || '·'}</span>
+          <div>
+            <b>{c.slug ? <a href={`/sertifikalar/${c.slug}`} style="color:inherit">{c.title}</a> : c.title}</b>
+            <p>{c.issuer}</p>
+          </div>
+        </li>
       ))}
     </ul>
 

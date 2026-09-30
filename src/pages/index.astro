@@ -39,7 +39,7 @@ const recent =projects.filter((p) => !p.data.featured).sort((a, b) => b.data.yea
             </ul>
             <div class="hero-cta">
               <a class="btn btn-primary" href="/projeler">Projeleri incele <Icon name="arrow" size={15} /></a>
-              <a class="btn" href="mailto:byznrklc01@gmail.com"><Icon name="mail" size={16} />İletişime geç</a>
+              <a class="btn" href="mailto:byznrklc01@gmail.com" data-copy="byznrklc01@gmail.com"><Icon name="mail" size={16} /><span class="btn-label">İletişime geç</span></a>
               <a class="btn btn-ghost" href="/hakkimda">Özgeçmiş</a>
             </div>
             <dl class="hero-stats">
@@ -143,7 +143,7 @@ const recent =projects.filter((p) => !p.data.featured).sort((a, b) => b.data.yea
           <li>
             <b>{c.title}</b>
             <span class="i">{c.issuer} · {c.date}</span>
-            <span class="v">{c.verify ? <a href={c.verify} target="_blank" rel="noopener">Doğrula ↗</a> : <a href="/sertifikalar">Belge</a>}</span>
+            <span class="v">{c.verify ? <a href={c.verify} target="_blank" rel="noopener">Doğrula ↗</a> : c.slug ? <a href={`/sertifikalar/${c.slug}`}>Sertifikalar</a> : <a href="/sertifikalar">Belge</a>}</span>
           </li>
         ))}
       </ul>

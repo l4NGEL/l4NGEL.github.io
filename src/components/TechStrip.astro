@@ -2,13 +2,19 @@
 // Projelerde gerçekten kullandığım teknolojilerin logoları (Simple Icons, CC0).
 import * as si from 'simple-icons';
 
-const keys = [
-  'siPython', 'siCplusplus', 'siDotnet', 'siOpenjdk', 'siRust', 'siTypescript',
-  'siPytorch', 'siOpencv', 'siNvidia', 'siOnnx', 'siTensorflow', 'siHuggingface', 'siScikitlearn',
-  'siReact', 'siFlutter', 'siKotlin', 'siSwift', 'siNodedotjs', 'siFastapi', 'siFlask',
-  'siPostgresql', 'siRedis', 'siDocker', 'siRos', 'siLinux', 'siGit', 'siGithubactions',
-] as const;
-const icons = keys.map((k) => (si as unknown as Record<string, { title: string; path: string }>)[k]).filter(Boolean);
+type Mark = { title: string; path: string };
+const pack = (si as unknown as Record<string, Mark>);
+const from = (...keys: string[]) => keys.map((k) => pack[k]).filter(Boolean);
+
+const icons: Mark[] = [
+  ...from('siPython', 'siCplusplus', 'siDotnet', 'siOpenjdk', 'siRust', 'siTypescript'),
+  { title: 'MATLAB', path: 'M2 20V4h4.2L12 13.2 17.8 4H22v16h-3.6V9.4L12 18.2 5.6 9.4V20H2z' },
+  ...from(
+    'siPytorch', 'siOpencv', 'siNvidia', 'siOnnx', 'siTensorflow', 'siHuggingface', 'siScikitlearn',
+    'siReact', 'siFlutter', 'siKotlin', 'siSwift', 'siNodedotjs', 'siFastapi', 'siFlask',
+    'siPostgresql', 'siRedis', 'siDocker', 'siRos', 'siLinux', 'siGit', 'siGithubactions',
+  ),
+];
 ---
 <div class="tech" aria-label="Kullandığım teknolojiler">
   <div class="tech-track">

@@ -6,14 +6,28 @@ export interface Certificate {
   issuer: string;
   date: string;
   year: number;
-  area: 'Ağ ve güvenlik' | 'Yazılım' | 'Yönetim' | 'Dil';
+  area: 'Ağ ve güvenlik' | 'Yazılım' | 'Yapay zekâ' | 'Yönetim' | 'Dil';
   detail?: string;
   id?: string;
   verify?: string;
   image?: string;
+  /** Birden fazla belgesi olan eğitim. Kart tek kalır; `slug` sayfasında parçalar açılır. */
+  slug?: string;
+  parts?: { title: string; image: string }[];
 }
 
 export const CERTIFICATES: Certificate[] = [
+  {
+    title: 'Introduction to Deep Learning for Computer Vision',
+    issuer: 'MathWorks · Coursera',
+    date: 'Eylül 2026',
+    year: 2026,
+    area: 'Yapay zekâ',
+    detail: 'MathWorks Training · bilgisayarlı görü için derin öğrenme',
+    id: '0ZX94CBT3103',
+    verify: 'https://coursera.org/verify/0ZX94CBT3103',
+    image: '/images/sertifikalar/coursera-dl-cv.webp',
+  },
   {
     title: 'C++ For C Programmers, Part A',
     issuer: 'University of California, Santa Cruz · Coursera',
@@ -41,7 +55,7 @@ export const CERTIFICATES: Certificate[] = [
     issuer: 'IBM · Coursera',
     date: 'Eylül 2026',
     year: 2026,
-    area: 'Yazılım',
+    area: 'Yapay zekâ',
     detail: 'Jeff Grossman, Joseph Santarcangelo, Saeed Aghabozorgi',
     id: '81UNB3QVLYZK',
     verify: 'https://coursera.org/verify/81UNB3QVLYZK',
@@ -81,6 +95,8 @@ export const CERTIFICATES: Certificate[] = [
     year: 2025,
     area: 'Ağ ve güvenlik',
     detail: '90 saat · e-Devlet ile doğrulanabilir belge',
+    id: 'C3H6F2DTJ3K2',
+    image: '/images/sertifikalar/thku-adli-bilisim.webp',
   },
   {
     title: 'Bilgi Güvenliği Yönetim Sistemi',
@@ -91,6 +107,30 @@ export const CERTIFICATES: Certificate[] = [
     id: 'OKMhqGjdqA',
     verify: 'https://www.btkakademi.gov.tr/portal/certificate/validate?certificateId=OKMhqGjdqA',
     image: '/images/sertifikalar/btk-bgys.webp',
+  },
+  {
+    title: 'Python Programlama 101-201-301-401',
+    issuer: 'Turkcell Akademi',
+    date: 'Aralık 2024',
+    year: 2024,
+    area: 'Yazılım',
+    detail: 'Geleceği Yazanlar · 17 Aralık 2024 sınavları',
+    slug: 'python-programlama',
+    parts: [
+      { title: 'Python Programlama 101', image: '/images/sertifikalar/python-101.webp' },
+      { title: 'Python Programlama 201', image: '/images/sertifikalar/python-201.webp' },
+      { title: 'Python Programlama 301', image: '/images/sertifikalar/python-301.webp' },
+      { title: 'Python Programlama 401', image: '/images/sertifikalar/python-401.webp' },
+    ],
+  },
+  {
+    title: 'Veri Bilimi ve Yapay Zekaya Giriş',
+    issuer: 'Turkcell Akademi',
+    date: 'Aralık 2024',
+    year: 2024,
+    area: 'Yapay zekâ',
+    detail: 'Geleceği Yazanlar · 17 Aralık 2024 sınavı',
+    image: '/images/sertifikalar/turkcell-veri-bilimi.webp',
   },
   {
     title: 'Oyun ve Uygulama Akademisi Mezuniyet Sertifikası',
@@ -106,7 +146,7 @@ export const CERTIFICATES: Certificate[] = [
     issuer: 'Oyun ve Uygulama Akademisi · Google',
     date: 'Ağustos 2024',
     year: 2024,
-    area: 'Yazılım',
+    area: 'Yapay zekâ',
     detail: '20 saat · yapay zeka eklentili uygulama geliştirme, OUA-3',
     image: '/images/sertifikalar/oua-flutter.webp',
   },
@@ -146,6 +186,7 @@ export const CERTIFICATES: Certificate[] = [
     year: 2026,
     area: 'Dil',
     detail: 'Okuma, dinleme, konuşma ve yazma B2',
+    verify: 'https://www.bebveris.com/verify.php?b=11',
     image: '/images/sertifikalar/american-life-b2.webp',
   },
 ];

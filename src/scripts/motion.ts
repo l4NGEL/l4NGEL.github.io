@@ -147,17 +147,34 @@ document.getElementById('theme')?.addEventListener('click', () => {
 });
 
 /* ---------- E-postayı kopyala, yukarı çık ---------- */
-document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) => {
-  b.addEventListener('click', async () => {
+document.querySelectorAll<HTMLElement>('[data-copy]').forEach((b) => {
+  b.addEventListener('click', async (e) => {
     const out = b.querySelector('.links-copied');
+    const label = b.querySelector('.btn-label');
+    const original = label?.textContent ?? '';
+    // Posta uygulaması yoksa mailto sessizce düşer; adres yine panoya alınsın.
+    if (b.tagName === 'A') e.preventDefault();
+    let ok = false;
     try {
       await navigator.clipboard.writeText(b.dataset.copy!);
+      ok = true;
+    } catch { /* pano kapalıysa mailto'ya bırak */ }
+    if (ok) {
       if (out) out.textContent = 'Kopyalandı';
-    } catch {
-      if (out) out.textContent = 'Kopyalanamadı';
+      if (label) label.textContent = 'Kopyalandı';
+    } else if (b instanceof HTMLAnchorElement && b.href) {
+      location.href = b.href;
+      if (label) label.textContent = original;
+      return;
+    } else if (out) {
+      out.textContent = 'Kopyalanamadı';
     }
     b.classList.add('done');
-    setTimeout(() => { b.classList.remove('done'); if (out) out.textContent = ''; }, 1800);
+    setTimeout(() => {
+      b.classList.remove('done');
+      if (out) out.textContent = '';
+      if (label && original) label.textContent = original;
+    }, 1800);
   });
 });
 document.querySelectorAll<HTMLAnchorElement>('[data-top]').forEach((a) =>

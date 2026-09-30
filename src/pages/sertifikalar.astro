@@ -2,9 +2,9 @@
 import Base from '../layouts/Base.astro';
 import { CERTIFICATES } from '../certificates';
 
-const AREAS = ['Ağ ve güvenlik', 'Yazılım', 'Yönetim', 'Dil'] as const;
-const docs = CERTIFICATES.filter((c) => c.image).sort((a, b) => b.year - a.year);
-const others = CERTIFICATES.filter((c) => !c.image);
+const AREAS = ['Ağ ve güvenlik', 'Yazılım', 'Yapay zekâ', 'Yönetim', 'Dil'] as const;
+const docs = CERTIFICATES.filter((c) => c.image || c.parts).sort((a, b) => b.year - a.year);
+const others = CERTIFICATES.filter((c) => !c.image && !c.parts?.length);
 const verifiable = CERTIFICATES.filter((c) => c.verify).length;
 const areaCount = (area: (typeof AREAS)[number]) => CERTIFICATES.filter((c) => c.area === area).length;
 ---
@@ -19,7 +19,7 @@ const areaCount = (area: (typeof AREAS)[number]) => CERTIFICATES.filter((c) => c
       <h1 class="p-title">Sertifikalar</h1>
       <div class="p-lead">
         <p class="lead">
-          Ağ ve siber güvenlik, yazılım, proje yönetimi ve dil alanlarında aldığım eğitimler. Doğrulama bağlantısı olan
+          Ağ ve siber güvenlik, yazılım, yapay zekâ, proje yönetimi ve dil alanlarında aldığım eğitimler. Doğrulama bağlantısı olan
           belgeler, veren kurumun kendi sitesinde kontrol edilebilir.
         </p>
         <dl class="facts">
@@ -41,9 +41,15 @@ const areaCount = (area: (typeof AREAS)[number]) => CERTIFICATES.filter((c) => c
       <div class="certs">
       {docs.map((c) => (
         <article class="cert" data-area={c.area}>
-          <a class="cert-img" href={c.image} target="_blank" rel="noopener" aria-label={`${c.title} belgesini büyük aç`}>
-            <img src={c.image} alt={`${c.title} sertifikası`} loading="lazy" decoding="async" />
-          </a>
+          {c.parts && c.slug ? (
+            <a class="cert-img cert-mosaic" href={`/sertifikalar/${c.slug}`} aria-label={`${c.title} sertifikalarını aç`}>
+              {c.parts.map((part) => <img src={part.image} alt="" loading="lazy" decoding="async" />)}
+            </a>
+          ) : (
+            <a class="cert-img" href={c.image} target="_blank" rel="noopener" aria-label={`${c.title} belgesini büyük aç`}>
+              <img src={c.image} alt={`${c.title} sertifikası`} loading="lazy" decoding="async" />
+            </a>
+          )}
           <div class="cert-body">
             <p class="cert-area">{c.area}</p>
             <h3>{c.title}</h3>
@@ -51,7 +57,9 @@ const areaCount = (area: (typeof AREAS)[number]) => CERTIFICATES.filter((c) => c
             {c.detail && <p class="cert-detail">{c.detail}</p>}
             <p class="cert-links">
               {c.verify && <a href={c.verify} target="_blank" rel="noopener">Doğrula ↗</a>}
-              <a href={c.image} target="_blank" rel="noopener">Belgeyi görüntüle</a>
+              {c.parts && c.slug
+                ? <a href={`/sertifikalar/${c.slug}`}>Sertifikaları gör</a>
+                : <a href={c.image} target="_blank" rel="noopener">Belgeyi görüntüle</a>}
               {c.id && <span class="cert-id">No: {c.id}</span>}
             </p>
           </div>
@@ -60,18 +68,20 @@ const areaCount = (area: (typeof AREAS)[number]) => CERTIFICATES.filter((c) => c
       </div>
     </div>
 
-    <div class="cert-group" data-cert-group>
-      <div class="shead"><h2>Diğer eğitimler</h2><span class="label">belge talep üzerine</span></div>
-      <ul class="cert-list">
-      {others.map((c) => (
-        <li data-area={c.area}>
-          <span class="cert-name"><span class="cert-area">{c.area}</span><b>{c.title}</b></span>
-          <span class="i">{c.issuer}{c.date && ` · ${c.date}`}</span>
-          <span class="v" style="color:var(--ink-3)">{c.detail}</span>
-        </li>
-      ))}
-      </ul>
-    </div>
+    {others.length > 0 && (
+      <div class="cert-group" data-cert-group>
+        <div class="shead"><h2>Diğer eğitimler</h2><span class="label">belge talep üzerine</span></div>
+        <ul class="cert-list">
+        {others.map((c) => (
+          <li data-area={c.area}>
+            <span class="cert-name"><span class="cert-area">{c.area}</span><b>{c.title}</b></span>
+            <span class="i">{c.issuer}{c.date && ` · ${c.date}`}</span>
+            <span class="v" style="color:var(--ink-3)">{c.detail}</span>
+          </li>
+        ))}
+        </ul>
+      </div>
+    )}
     <p class="cert-empty" data-cert-empty hidden>Bu alanda belge yok.</p>
   </main>
 </Base>

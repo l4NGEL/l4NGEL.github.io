@@ -1,16 +1,17 @@
 ---
 title: "GeoCommand"
-tagline: "Harita üzerinde canlı araç takibi, bölge olayları ve görev atama; WPF + ASP.NET Core + PostGIS."
+tagline: "Harita üzerinde canlı araç takibi, bölge olayları ve görev atama; WPF + ASP.NET Core + PostGIS, MEF ile plugin mimarisi."
 summary: "Operatörün simüle araçları haritada canlı izlediği, kendi çizdiği bölgelere giriş ve çıkışları takip ettiği, araçlara görev atadığı bir masaüstü uygulaması. En çok uğraştığım kısım, bağlantı koptuğunda ve geri geldiğinde hiçbir olayın kaybolmaması ya da iki kez sayılmamasıydı."
 categories: [sys, web]
 order: 5
 period: Eylül 2026
 year: 2026
-stack: [C#, .NET 10, WPF, CommunityToolkit.Mvvm, Mapsui, ASP.NET Core, SignalR, EF Core, PostGIS, Serilog, xUnit, Testcontainers]
+stack: [C#, .NET 10, WPF, CommunityToolkit.Mvvm, Mapsui, ASP.NET Core, SignalR, EF Core, PostGIS, MEF (System.Composition), NMEA 0183, Serilog, xUnit, Testcontainers]
 metrics:
-  - { value: '86', label: 'test, 6 tanesi gerçek PostGIS ile' }
+  - { value: '127', label: 'test, 9 tanesi gerçek PostGIS ile' }
   - { value: '4', label: 'katmanda yinelenen olay koruması' }
-  - { value: 'WGS84', label: 'bölge hesabı, ekran pikseli değil' }
+  - { value: '3', label: 'konum kaynağı: simülatör, CSV, NMEA plugin' }
+repo: https://github.com/l4NGEL/GeoCommand
 cover:
   src: /images/geocommand/gorev-atama.webp
   alt: Görev atama ekranı; araç listesi, harita, seçili aracın ayrıntıları ve canlı olay listesi
@@ -26,7 +27,7 @@ Eğitim amaçlı bir simülasyon; hiçbir gerçek sisteme, cihaza ya da kurumsal
 
 ## Mimari
 
-Sunucu dört katmandan oluşuyor. `Domain` hiçbir projeye bağımlı değil; `Application` veritabanına kendi tanımladığı bir arayüz üzerinden erişiyor ve `Infrastructure` bunu EF Core ile uyguluyor. Soyutlamaları yalnızca gerçek bir ihtiyaç olduğunda ekledim. Örneğin `IPositionSource`'un iki gerçek uygulaması var (simülatör ve CSV kayıt dosyası). Ayrı bir repository katmanı eklemedim, çünkü EF Core'un `DbSet`'i zaten bu işi görüyor.
+Sunucu dört katmandan oluşuyor. `Domain` hiçbir projeye bağımlı değil; `Application` veritabanına kendi tanımladığı bir arayüz üzerinden erişiyor ve `Infrastructure` bunu EF Core ile uyguluyor. Soyutlamaları yalnızca gerçek bir ihtiyaç olduğunda ekledim. Örneğin `IPositionSource`'un üç gerçek uygulaması var: simülatör, CSV kayıt dosyası ve bir NMEA plugin'i. Ayrı bir repository katmanı eklemedim, çünkü EF Core'un `DbSet`'i zaten bu işi görüyor.
 
 Bir konum bildirimi sisteme girdiğinde şu yolu izliyor:
 
@@ -55,6 +56,17 @@ Harita Web Mercator'da çiziliyor ama tüm hesaplar WGS84 enlem / boylam üzerin
 
 <Figure n={4} src="/images/geocommand/konum-gecmisi.webp" caption="Seçili aracın tarih aralığındaki izi ve o aralıktaki olaylar" bare />
 
+## Plugin mimarisi
+
+Konum kaynakları sabit kodlanmış değil. `plugins/` klasörüne derlenmiş bir DLL bırakmak yeni bir kaynak eklemeye yetiyor; API, istemci ya da veritabanında değişiklik gerekmiyor. Kaynak, API'nin kaynak listesinde ve istemcinin açılır listesinde kendiliğinden görünüyor ve çalışma anında seçilebiliyor.
+
+- **Keşif (MEF):** Plugin sınıfı `[PositionSource("Ad")]` özniteliğiyle işaretleniyor. Katalog dışa aktarımları `Lazy<IPositionSource, Metadata>` olarak aldığı için kaynak listesi, plugin sınıfı hiç örneklenmeden okunuyor; yalnızca seçilen kaynak oluşturuluyor.
+- **Yalıtım:** Her plugin kendi `AssemblyLoadContext`'ine yükleniyor ve bağımlılıklarını kendi klasöründen çözüyor; API ile farklı sürüm bir paket kullanabiliyor. Sözleşme derlemeleri ise bilerek paylaşılıyor. Paylaşılmasaydı plugin'deki `IPositionSource` API'dekiyle aynı tür sayılmaz ve MEF hiçbir şeyi eşleştiremezdi; bunu bir birim testi doğruluyor.
+- **Bağımlılık:** Plugin API'nin DI kapsayıcısını görmüyor; yalnızca kendi yapılandırma bölümünü, logger'ı ve saati veren küçük bir host arayüzü alıyor.
+- **Hata dayanıklılığı:** Bozuk bir DLL, eksik dosya ya da aynı adlı ikinci kaynak yalnızca o plugin'in atlanmasına yol açıyor; API yine açılıyor ve hata katalogda görünüyor.
+
+İlk plugin, TCP üzerinden gelen **NMEA 0183** GPS akışını (`$GPRMC` cümleleri) okuyor. Sağlama toplamı zorunlu; hatalı toplam, geçersiz alan (60'tan büyük dakika, 30 Şubat) ve 120 karakteri aşan satır reddediliyor. Test için GPS alıcısı yerine geçen bir Python yayıncısı yazdım; cümlelerin %5'inin sağlama toplamını bilerek bozuyor. Kesirli saniyeyi `double` ile ayrıştırınca `05.06` saniye `05.0599999` oluyordu; bu hatayı gidiş-dönüş testi yakaladı, `decimal`'a geçtim.
+
 ## Teknoloji seçimleri
 
 | Alan | Seçim | Neden |
@@ -63,6 +75,7 @@ Harita Web Mercator'da çiziliyor ama tüm hesaplar WGS84 enlem / boylam üzerin
 | Masaüstü | WPF + CommunityToolkit.Mvvm | Kaynak üreteçleri tekrar eden kodu kaldırıyor |
 | Harita | Mapsui + OpenStreetMap | Serbest lisans, NTS geometrisini doğrudan çiziyor |
 | Canlı veri | SignalR, tipli hub | Sunucudan istemciye itme, otomatik yeniden bağlanma |
+| Genişletilebilirlik | MEF (`System.Composition`) + `AssemblyLoadContext` | Plugin'leri örneklemeden keşif, bağımlılık yalıtımı |
 | Veritabanı | PostgreSQL 17 + PostGIS 3.5 | GIST indeksli geometri, `ST_Covers` sorguları |
 | Test | xUnit + Testcontainers | Entegrasyon testleri sahte değil gerçek PostGIS'e karşı |
 
@@ -72,4 +85,6 @@ Harita Web Mercator'da çiziliyor ama tüm hesaplar WGS84 enlem / boylam üzerin
 - Kimlik doğrulama yok; yalnızca yerel demo için.
 - Nokta-çokgen testi düzlemsel. Çok büyük bölgelerde kenarlar jeodezik değil.
 - API yeniden başlarsa simülatör baştan başlıyor ve araçlar ilk konumlarına "atlıyor"; bu atlama sahte bir bölge olayı üretebilir.
+- Plugin'ler güvenilir kod sayılıyor: API ile aynı süreçte ve aynı yetkilerle çalışıyor; `AssemblyLoadContext` bağımlılık yalıtımı sağlıyor, güvenlik yalıtımı sağlamıyor. Çalışırken kaldırılıp yeniden yüklenemiyor.
+- NMEA kaynağı yalnızca RMC cümlesini kullanıyor ve şimdilik yalnızca TCP destekliyor; seri port (RS-232) yok.
 - WPF istemcinin durum mantığı birim testli; ekran akışlarını UI Automation betiğiyle doğruladım.

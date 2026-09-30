@@ -1,0 +1,102 @@
+---
+title: "SQL Tabanlı Ağ Saldırısı Tespiti"
+tagline: "16 milyon ağ akışını PostgreSQL'de temizleyip SQL ile özellik üreten, LightGBM ile saldırı tespit eden sistem."
+summary: "CSE-CIC-IDS2018 veri setinin 16,2 milyon etiketli ağ akışını PostgreSQL'e yükleyip denetleyen, temizleyen ve özelliklerin önemli kısmını SQL ile üreten bir saldırı tespit sistemi. Aynı saldırının ileriki dakikalarını %94 yakalayan model, hiç görmediği bir güne geçince medyanda saldırıların yalnızca dörtte birini yakalıyor; projenin asıl bulgusu bu fark."
+categories: [sec, ai]
+order: 13.5
+period: "Eylül 2026"
+year: 2026
+stack: [PostgreSQL 16, SQL, Python, LightGBM, scikit-learn, FastAPI, Docker, pytest]
+metrics:
+  - { value: '0,990', label: 'PR-AUC, kronolojik test' }
+  - { value: '1,65', label: 'yanlış alarm / 1.000 normal akış' }
+  - { value: '0,25', label: 'medyan recall, görülmemiş gün' }
+  - { value: '37', label: 'test, gerçek PostgreSQL ile' }
+---
+
+## Veri
+
+Kanada Siber Güvenlik Enstitüsü'nün CSE-CIC-IDS2018 veri seti: 10 günlük bir test ağında üretilmiş, CICFlowMeter ile akışlara çevrilmiş ve etiketlenmiş 16,2 milyon kayıt (6,89 GB CSV). Her gün ayrı bir saldırı senaryosu: kaba kuvvet, DoS, DDoS, web saldırıları, sızma ve botnet.
+
+Veriyi kullanmadan önce denetledim ve belgelenmemiş birkaç sorun buldum:
+
+| Sorun | Nasıl anlaşıldı | Karar |
+|---|---|---|
+| Zaman damgaları 12 saatlik, AM/PM yok | Saat histogramı 08:00'de başlıyor; 14-02'deki SSH saldırısı CSV'de 02:01, resmi takvimde 14:01 | saat 8'den küçükse +12 saat; sonrasında tüm saldırılar takvimle örtüşüyor |
+| 7 dosya Excel satır sınırında kesilmiş | Tam 1.048.575 satır | Geri getirilemez; sınırlama olarak raporlandı |
+| Birebir tekrar eden kayıtlar | 410.707 satır | İlki tutuldu |
+| Etiket çelişkisi (aynı akış, farklı etiket) | 13.212 satır | Grup düşürüldü |
+| Sonsuz / NaN oranlar | Hepsi süresi 0 olan akışlar | NULL; doldurma yalnızca eğitimde öğreniliyor |
+
+Temizleme adımlarının her biri etkilediği satır sayısını bir meta tablosuna yazıyor ve sayılar kapanıyor: 16.232.943 − 14 − 410.707 − 13.212 = **15.809.010** temiz akış.
+
+## Mimari
+
+Tüm dönüşümler SQL dosyalarında. Python yalnızca SQL'i çalıştırıyor, sonucu okuyor ve modeli eğitiyor; modelin okuduğu veri tek bir SQL sorgusunun çıktısı.
+
+```
+AWS S3 (resmi CSV'ler)
+  → akış hâlinde COPY ile raw.flows      (gün bölümlü, ham değerler numeric)
+  → denetim + temizleme → clean.flows    (her kuralın sayımı meta şemasına)
+  → SQL özellikleri + ayrım → features   (sızıntı denetimleri meta şemasına)
+  → LightGBM / lojistik regresyon
+  → FastAPI /predict
+```
+
+Üç ana tablo yakalama gününe göre bölümlü. Gün, hem yeniden yükleme birimi (bir gün, işlem içinde yeniden oluşturulan bölüme idempotent yükleniyor) hem de zaman pencerelerinin doğal sınırı.
+
+## SQL ile özellik üretimi
+
+CICFlowMeter bir akışın kaydını ancak akış kapandığında üretiyor; bu yüzden tahmin anını akışın **bitiş** anı olarak aldım. Zaman penceresi özellikleri `RANGE BETWEEN '60 seconds' PRECEDING` ile yalnızca o ana kadar bitmiş akışları görüyor: aynı porta son 10 ve 60 saniyede biten akış sayısı, yanıtsız akış payı, RST payı gibi. Bir test, önce başlayıp sonra biten bir akışın pencereye sızmadığını elle hesaplanmış değerlerle doğruluyor.
+
+IP adresleri, zaman damgası, gün ve dosya adı gibi alanlar modele giremiyor; bu kural hem eğitimde hem API'de testle denetleniyor.
+
+## Deney tasarımı
+
+Saldırı türleri yalnızca belirli günlerde ve saatlerde var. Rastgele satır bölmesi aynı saldırı oturumunun komşu akışlarını eğitime ve teste dağıtıp sonucu şişirir. Bunun yerine iki test tasarladım:
+
+1. **Kronolojik ayrım:** Her saldırı patlaması kendi zaman yüzdelikleriyle bölünüyor; eğitim önce, doğrulama arada, test en sonda. "Bu saldırıyı başladıktan birkaç dakika sonra tanıyabiliyor mu?" sorusunu cevaplıyor.
+2. **Gün dışarıda bırakma:** Model bir günü hiç görmeden eğitilip o günün tamamında test ediliyor. "Hiç görmediği bir senaryoya genelleyebiliyor mu?" sorusunu cevaplıyor.
+
+Eşikler yalnızca doğrulama bölümünde seçildi; test hiçbir seçimde kullanılmadı. Başarı ölçütü accuracy değil: her zaman "normal" diyen bir model bile %85,4 accuracy alıyor. Onun yerine PR-AUC, recall ve 1.000 normal akış başına yanlış alarm kullandım.
+
+İlk ayrım sürümümde DDoS-LOIC-HTTP'nin 575 bin akışı eğitime, yalnızca 797'si teste düşüyordu. Sebep, saldırı bittikten sonra görülen birkaç dağınık akışın zaman aralığını uzatmasıydı; yüzdelik tabanlı bölmeye geçtim.
+
+## Sonuçlar
+
+Kronolojik test, 2,8 milyon akış:
+
+| Yöntem | PR-AUC | Recall | Yanlış alarm / 1.000 |
+|---|---|---|---|
+| Her zaman "normal" | 0,146 | 0 | 0 |
+| Tek parametreli hız kuralı | 0,765 | 0,686 | 5,70 |
+| Lojistik regresyon | 0,954 | 0,919 | 5,81 |
+| **LightGBM** | **0,990** | **0,941** | **1,65** |
+
+Test akışlarının %26,6'sı eğitimdeki bir akışla birebir aynıydı (aynı kaba kuvvet isteği binlerce kez). Sonucu şişirmemesi için eğitimde hiç görülmemiş akışlarda ayrıca ölçtüm: PR-AUC 0,978. SQL ile üretilen pencere özellikleri PR-AUC'u 0,973'ten 0,990'a çıkardı.
+
+Gün dışarıda bırakıldığında tablo değişiyor. 10 günün medyanında PR-AUC 0,53, recall **0,25**. DoS-Hulk gibi hacim izi bırakan saldırılar eğitimde hiç görülmeden %98 yakalanırken, sızma (Infiltration) gününde model rastgeleden kötü: PR-AUC 0,096, 1.000 normal akışta 81,7 yanlış alarm. Bir günde sıralama kusursuz (PR-AUC 1,000) ama diğer günlerde seçilen eşik o gün için fazla yüksek kalıyor.
+
+Asıl bulgu bu iki tablo arasındaki fark: laboratuvar veri setinde yüksek görünen tespit başarısı, görülmemiş senaryoya büyük ölçüde taşınmıyor.
+
+## Performans
+
+Her tasarım kararını tam veride ölçerek verdim:
+
+| Karşılaştırma | Seçilmeyen | Kullanılan | Fark |
+|---|---|---|---|
+| 60 saniyelik kayan pencere toplamı | `sum(real)`: 600 s'de bitmedi | `sum(bigint)`: 1,31 s | 450 kattan fazla |
+| Ham veri denetimi | sütun başına ayrı tarama: 55,5 s | tek tarama: 3,3 s | 16,7 kat |
+| Bir günün sorgusu | 10 bölüm taranıyor: 0,92 s | 1 bölüm: 0,073 s | 12,6 kat |
+| 100 bin satır yükleme | `INSERT`: 12.789 satır/s | `COPY`: 78.970 satır/s | 6,2 kat |
+
+İlk satırın sebebi: PostgreSQL'de `float` toplamının kayan pencere için ters işlemi yok; yoğun bir DDoS anında pencere her satırda baştan toplanıyor ve maliyet karesel büyüyor. Toplamı tamsayıya çevirmek bunu çözdü.
+
+API'de uçtan uca tahmin gecikmesi p50 5,15 ms; model düzeyinde toplu tahmin saniyede ~260 bin akış.
+
+## Sınırlamalar
+
+- Bu bir laboratuvar veri seti; saldırılar bilinen araçlarla, bilinen saatlerde üretildi. Sonuçlar gerçek bir ağdaki performansı göstermiyor; buna en yakın ölçü gün dışarıda bırakma testi.
+- Doğrulamada seçilen yanlış alarm bütçesi teste birebir taşınmıyor (1/1.000 hedefi testte 2,29 oldu); canlıda eşik izlenmeli.
+- Bellek sınırı yüzünden eğitimdeki normal akışların %35'i kullanıldı; saldırılar ve test bölümü tam.
+- Saldırısız zaman blokları döngüsel atandığı için normal trafikte kronoloji tam değil; bunu sızıntı tablosunda raporladım.

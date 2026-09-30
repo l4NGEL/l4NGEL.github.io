@@ -1,5 +1,7 @@
 ---
 import '../styles/global.css';
+import ContactLinks from '../components/ContactLinks.astro';
+import Icon from '../components/Icon.astro';
 
 interface Props {
   title: string;
@@ -69,16 +71,30 @@ const onWork = path.startsWith('/projeler');
     <slot />
 
     <footer class="foot">
-      <div class="wrap">
-        <p class="label">Bir proje, pozisyon ya da soru için</p>
-        <a class="big" href="mailto:byznrklc01@gmail.com">byznrklc01@gmail.com</a>
-        <div class="foot-row">
-          <span>
-            <a href="https://github.com/l4NGEL" rel="noopener">GitHub</a>
-            <a href="https://www.linkedin.com/in/beyza-nur-kili%C3%A7/" rel="noopener">LinkedIn</a>
-          </span>
-          <span>© {new Date().getFullYear()} Beyza Nur Kılıç · Ankara</span>
+      <div class="wrap foot-grid">
+        <div class="foot-intro">
+          <p class="foot-name">Beyza Nur Kılıç</p>
+          <p class="foot-role">Bilgisayar mühendisi · Ankara</p>
+          <p class="foot-note">Bir proje, pozisyon ya da soru için yazabilirsiniz.</p>
+          <a class="foot-mail" href="mailto:byznrklc01@gmail.com">byznrklc01@gmail.com</a>
         </div>
+        <nav class="foot-col" aria-label="Sayfalar">
+          <p class="label">Sayfalar</p>
+          <ul>
+            <li><a href="/">Ana sayfa</a></li>
+            <li><a href="/projeler">Projeler</a></li>
+            <li><a href="/sertifikalar">Sertifikalar</a></li>
+            <li><a href="/hakkimda">Hakkımda</a></li>
+          </ul>
+        </nav>
+        <div class="foot-col">
+          <p class="label">Bağlantılar</p>
+          <ContactLinks variant="foot" />
+        </div>
+      </div>
+      <div class="wrap foot-bar">
+        <span>© {new Date().getFullYear()} Beyza Nur Kılıç</span>
+        <a href="#" class="to-top" data-top><Icon name="up" size={15} /> Yukarı çık</a>
       </div>
     </footer>
 

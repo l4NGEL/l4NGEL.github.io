@@ -9,6 +9,7 @@ import { CERTIFICATES } from '../certificates';
 import { ROLES } from '../experience';
 import HeroCanvas from '../components/HeroCanvas.astro';
 import TechStrip from '../components/TechStrip.astro';
+import ContactLinks from '../components/ContactLinks.astro';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const featured = projects.filter((p) => p.data.featured);
@@ -40,13 +41,7 @@ const recent = projects.filter((p) => !p.data.featured).sort((a, b) => b.data.ye
           </div>
           <div>
             <p class="label">Bağlantılar</p>
-            <ul class="linklist">
-              <li><a href="mailto:byznrklc01@gmail.com">E-posta</a></li>
-              <li><a href="https://github.com/l4NGEL" rel="noopener">GitHub</a></li>
-              <li><a href="https://www.linkedin.com/in/beyza-nur-kili%C3%A7/" rel="noopener">LinkedIn</a></li>
-              <li><a href="/hakkimda">Özgeçmiş</a></li>
-              <li><a href="/sertifikalar">Sertifikalar</a></li>
-            </ul>
+            <ContactLinks />
           </div>
         </div>
       </div>

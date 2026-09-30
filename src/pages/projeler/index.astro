@@ -1,9 +1,12 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+import { DIAGRAMS } from '../../diagrams';
 import { CATEGORIES, type Category } from '../../categories';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const featured = projects.filter((p) => p.data.featured);
 const count = (c: Category) => projects.filter((p) => p.data.categories.includes(c)).length;
 const open = projects.filter((p) => p.data.repo).length;
 ---
@@ -21,35 +24,76 @@ const open = projects.filter((p) => p.data.repo).length;
           Kişisel, akademik ve ekip projelerim. Her birinin sayfasında ne yaptığımı, nasıl ölçtüğümü ve neyin
           beklediğim gibi çıkmadığını anlattım.
         </p>
-        <dl class="facts">
-          <dt>Toplam</dt><dd>{projects.length} proje</dd>
-          <dt>Açık kaynak</dt><dd>{open} proje GitHub'da</dd>
-          <dt>Diğerleri</dt><dd>Kod talep üzerine paylaşılır</dd>
+        <dl class="stat-row">
+          <div><dt>Proje</dt><dd>{projects.length}</dd></div>
+          <div><dt>Açık kaynak</dt><dd>{open}</dd></div>
+          <div><dt>Alan</dt><dd>{Object.keys(CATEGORIES).length}</dd></div>
         </dl>
       </div>
     </header>
 
+    <div class="shead"><h2>Öne çıkanlar</h2><span class="label">En kapsamlı dört proje</span></div>
+    <div class="pcards">
+      {featured.map((p) => {
+        const d = p.data;
+        const Diagram = d.diagram ? DIAGRAMS[d.diagram as keyof typeof DIAGRAMS] : undefined;
+        return (
+          <a class="pcard" href={`/projeler/${p.id}`}>
+            <div class="pcard-media">
+              {Diagram ? <div class="pcard-dg"><Diagram /></div> : d.cover ? <img src={d.cover.src} alt="" loading="lazy" decoding="async" /> : null}
+            </div>
+            <div class="pcard-body">
+              <p class="pcard-cats">{d.categories.map((c) => CATEGORIES[c]).join(' · ')}</p>
+              <h3 style={`view-transition-name: p-${p.id}`}>{d.title}</h3>
+              <p class="pcard-tag">{d.tagline}</p>
+              {d.metrics.length > 0 && (
+                <div class="pcard-metrics">
+                  {d.metrics.slice(0, 2).map((m) => <span><b>{m.value}</b>{m.label}</span>)}
+                </div>
+              )}
+              <span class="pcard-go">Ayrıntılar <Icon name="arrow" size={14} /></span>
+            </div>
+          </a>
+        );
+      })}
+    </div>
+
+    <div class="shead"><h2>Tüm projeler</h2><span class="label">Alana göre filtrele</span></div>
     <div class="filters" id="filters" role="group" aria-label="Alana göre filtrele">
       <button type="button" data-f="all" aria-pressed="true">Tümü<sup>{projects.length}</sup></button>
       {(Object.keys(CATEGORIES) as Category[]).map((c) => (
         <button type="button" data-f={c} aria-pressed="false">{CATEGORIES[c]}<sup>{count(c)}</sup></button>
       ))}
     </div>
-    <ol class="index">
-      {projects.map((p) => (
-        <li data-cat={p.data.categories.join(' ')}>
-          <a class="row" href={`/projeler/${p.id}`}>
-            <span class="n"></span>
-            <span class="t" style={`view-transition-name: p-${p.id}`}>{p.data.title}</span>
-            <span class="d">{p.data.tagline}</span>
-            <span class="m">
-              {p.data.status ? <span class="tag-status">{p.data.status}</span> : p.data.year}
-              {' · '}{p.data.repo ? 'açık kaynak' : 'özel repo'}
-            </span>
-            <span class="arrow" aria-hidden="true">→</span>
-          </a>
-        </li>
-      ))}
+    <ol class="index plist">
+      {projects.map((p) => {
+        const d = p.data;
+        const m = d.metrics[0];
+        return (
+          <li data-cat={d.categories.join(' ')}>
+            <a class="prow" href={`/projeler/${p.id}`}>
+              <div class="prow-head">
+                <span class="prow-t" style={d.featured ? undefined : `view-transition-name: p-${p.id}`}>{d.title}</span>
+                <span class="prow-cats">
+                  {d.status && <em class="tag-status">{d.status}</em>}
+                  {d.categories.map((c) => CATEGORIES[c]).join(' · ')}
+                </span>
+              </div>
+              <div class="prow-mid">
+                <p>{d.tagline}</p>
+                <ul class="chips">{d.stack.slice(0, 5).map((s) => <li>{s}</li>)}</ul>
+              </div>
+              <div class="prow-metric">{m && <><b>{m.value}</b><span>{m.label}</span></>}</div>
+              <div class="prow-end">
+                <span class:list={['repo', { on: d.repo }]} title={d.repo ? 'Kod GitHub’da açık' : 'Kod talep üzerine'}>
+                  {d.repo ? <><Icon name="github" size={14} /> açık</> : 'özel'}
+                </span>
+                <span class="prow-go"><Icon name="arrow" size={16} /></span>
+              </div>
+            </a>
+          </li>
+        );
+      })}
     </ol>
   </main>
 </Base>

@@ -5,8 +5,8 @@ const root = document.documentElement;
 
 /* ---------- Kaydırınca beliren bloklar ---------- */
 const REVEAL = [
-  '.shead', '.work', '.role-row', '.index li', '.cert', '.cert-list li', '.cv-list li',
-  '.p-metrics', '.p-cover', '.toc', '.prose > *', '.certs', '.next',
+  '.shead', '.work', '.role-row', '.index > li', '.cert', '.cert-list > li', '.cv-list > li',
+  '.p-metrics', '.p-cover', '.toc', '.prose > *', '.certs', '.next', '.pcard',
 ].join(',');
 
 function reveal(el: Element) {
@@ -146,8 +146,26 @@ document.getElementById('theme')?.addEventListener('click', () => {
   else apply();
 });
 
+/* ---------- E-postayı kopyala, yukarı çık ---------- */
+document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((b) => {
+  b.addEventListener('click', async () => {
+    const out = b.querySelector('.links-copied');
+    try {
+      await navigator.clipboard.writeText(b.dataset.copy!);
+      if (out) out.textContent = 'Kopyalandı';
+    } catch {
+      if (out) out.textContent = 'Kopyalanamadı';
+    }
+    b.classList.add('done');
+    setTimeout(() => { b.classList.remove('done'); if (out) out.textContent = ''; }, 1800);
+  });
+});
+document.querySelectorAll<HTMLAnchorElement>('[data-top]').forEach((a) =>
+  a.addEventListener('click', (e) => { e.preventDefault(); scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' }); }),
+);
+
 /* ---------- Proje filtresi: satırlar yumuşakça yeniden dizilir ---------- */
-const rows = [...document.querySelectorAll<HTMLElement>('.index li')];
+const rows = [...document.querySelectorAll<HTMLElement>('.index > li[data-cat]')];
 const btns = [...document.querySelectorAll<HTMLButtonElement>('#filters button')];
 for (const b of btns) {
   b.addEventListener('click', () => {

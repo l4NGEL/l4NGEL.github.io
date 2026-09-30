@@ -1,0 +1,37 @@
+---
+import Icon from './Icon.astro';
+import { CERTIFICATES } from '../certificates';
+
+interface Props {
+  // hero: tümü; foot: yalnızca dış bağlantılar
+  variant?: 'hero' | 'foot';
+}
+const { variant = 'hero' } = Astro.props;
+
+const EMAIL = 'byznrklc01@gmail.com';
+const all = [
+  { icon: 'mail', label: 'E-posta', sub: EMAIL, href: `mailto:${EMAIL}`, copy: EMAIL, ext: false },
+  { icon: 'github', label: 'GitHub', sub: 'github.com/l4NGEL', href: 'https://github.com/l4NGEL', ext: true },
+  { icon: 'linkedin', label: 'LinkedIn', sub: 'in/beyza-nur-kılıç', href: 'https://www.linkedin.com/in/beyza-nur-kili%C3%A7/', ext: true },
+  { icon: 'doc', label: 'Özgeçmiş', sub: 'Deneyim ve eğitim', href: '/hakkimda', ext: false },
+  { icon: 'badge', label: 'Sertifikalar', sub: `${CERTIFICATES.length} eğitim, belgeleriyle`, href: '/sertifikalar', ext: false },
+] as const;
+// Footer'da e-posta zaten büyük yazıyla duruyor; listede tekrar etmesin.
+const items = variant === 'foot' ? all.slice(1, 4) : all;
+---
+<ul class:list={['links', `links-${variant}`]}>
+  {items.map((l) => (
+    <li>
+      <a href={l.href} rel={l.ext ? 'noopener' : undefined} target={l.ext ? '_blank' : undefined}>
+        <span class="links-ic"><Icon name={l.icon} /></span>
+        <span class="links-txt"><b>{l.label}</b><small>{l.sub}</small></span>
+        <span class="links-go"><Icon name="arrow" size={15} /></span>
+      </a>
+      {'copy' in l && (
+        <button type="button" class="links-copy" data-copy={l.copy} aria-label="E-posta adresini kopyala" title="Kopyala">
+          <Icon name="copy" size={15} /><span class="links-copied" aria-live="polite"></span>
+        </button>
+      )}
+    </li>
+  ))}
+</ul>

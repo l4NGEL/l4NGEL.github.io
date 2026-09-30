@@ -54,7 +54,7 @@ img { max-width: 100%; height: auto; display: block; }
    Top bar
    ------------------------------------------------------------ */
 .topbar { border-bottom: 1px solid var(--rule); background: var(--paper); }
-.topbar .wrap { display: flex; align-items: center; justify-content: flex-end; gap: 16px; min-height: 64px; }
+.topbar .wrap { display: flex; align-items: center; justify-content: flex-end; gap: 16px; min-height: 64px; max-width: none; padding: 0 clamp(16px, 2.5vw, 40px); }
 .mark { font: 600 18px/1 var(--serif); text-decoration: none; letter-spacing: -0.005em; }
 .menu { display: flex; align-items: center; gap: 26px; font: 15px var(--sans); }
 .menu a { text-decoration: none; color: var(--ink-2); padding: 8px 0; }

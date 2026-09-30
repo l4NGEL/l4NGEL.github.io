@@ -55,8 +55,8 @@ const onWork = path.startsWith('/projeler');
   <body>
     <header class="topbar">
       <div class="wrap">
-        <a class="mark" href="/">Beyza Nur Kılıç</a>
         <nav class="menu" aria-label="Site">
+          <a href="/" class="menu-home" aria-current={path === '/' ? 'page' : undefined}>Ana sayfa</a>
           <a href="/projeler" aria-current={onWork ? 'page' : undefined}>Projeler</a>
           <a href="/sertifikalar" aria-current={path === '/sertifikalar' ? 'page' : undefined}>Sertifikalar</a>
           <a href="/hakkimda" aria-current={path === '/hakkimda' ? 'page' : undefined}>Hakkımda</a>

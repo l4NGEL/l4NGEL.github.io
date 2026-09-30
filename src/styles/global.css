@@ -54,7 +54,7 @@ img { max-width: 100%; height: auto; display: block; }
    Top bar
    ------------------------------------------------------------ */
 .topbar { border-bottom: 1px solid var(--rule); background: var(--paper); }
-.topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 64px; }
+.topbar .wrap { display: flex; align-items: center; justify-content: flex-end; gap: 16px; min-height: 64px; }
 .mark { font: 600 18px/1 var(--serif); text-decoration: none; letter-spacing: -0.005em; }
 .menu { display: flex; align-items: center; gap: 26px; font: 15px var(--sans); }
 .menu a { text-decoration: none; color: var(--ink-2); padding: 8px 0; }
@@ -309,9 +309,12 @@ img { max-width: 100%; height: auto; display: block; }
 .cert-list a:hover { text-decoration: underline; }
 
 @media (max-width: 560px) {
-  .topbar .wrap { flex-wrap: wrap; row-gap: 0; padding-top: 10px; padding-bottom: 4px; min-height: 0; }
-  .menu { gap: 18px; font-size: 15px; width: 100%; }
-  .menu .theme { margin-left: auto; }
+  .topbar .wrap { min-height: 56px; }
+  .menu { gap: 16px; font-size: 14.5px; }
+}
+.menu a { white-space: nowrap; }
+@media (max-width: 420px) {
+  .menu-home { display: none; }
 }
 
 /* Deneyim */

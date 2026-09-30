@@ -2,9 +2,11 @@
 import Base from '../layouts/Base.astro';
 import { CERTIFICATES } from '../certificates';
 
+const AREAS = ['Ağ ve güvenlik', 'Yazılım', 'Yönetim', 'Dil'] as const;
 const docs = CERTIFICATES.filter((c) => c.image).sort((a, b) => b.year - a.year);
 const others = CERTIFICATES.filter((c) => !c.image);
 const verifiable = CERTIFICATES.filter((c) => c.verify).length;
+const areaCount = (area: (typeof AREAS)[number]) => CERTIFICATES.filter((c) => c.area === area).length;
 ---
 <Base
   title="Sertifikalar · Beyza Nur Kılıç"
@@ -17,7 +19,7 @@ const verifiable = CERTIFICATES.filter((c) => c.verify).length;
       <h1 class="p-title">Sertifikalar</h1>
       <div class="p-lead">
         <p class="lead">
-          Ağ ve siber güvenlik, yazılım ve proje yönetimi alanlarında aldığım eğitimler. Doğrulama bağlantısı olan
+          Ağ ve siber güvenlik, yazılım, proje yönetimi ve dil alanlarında aldığım eğitimler. Doğrulama bağlantısı olan
           belgeler, veren kurumun kendi sitesinde kontrol edilebilir.
         </p>
         <dl class="facts">
@@ -27,16 +29,25 @@ const verifiable = CERTIFICATES.filter((c) => c.verify).length;
       </div>
     </header>
 
-    <div class="shead"><h2>Belgeler</h2><span class="label">{docs.length}</span></div>
-    <div class="certs">
+    <div class="filters" id="cert-filters" role="group" aria-label="Alana göre filtrele">
+      <button type="button" data-f="all" aria-pressed="true">Tümü<sup>{CERTIFICATES.length}</sup></button>
+      {AREAS.filter((area) => areaCount(area) > 0).map((area) => (
+        <button type="button" data-f={area} aria-pressed="false">{area}<sup>{areaCount(area)}</sup></button>
+      ))}
+    </div>
+
+    <div class="cert-group" data-cert-group>
+      <div class="shead"><h2>Belgeler</h2><span class="label" data-cert-count>{docs.length}</span></div>
+      <div class="certs">
       {docs.map((c) => (
-        <article class="cert">
+        <article class="cert" data-area={c.area}>
           <a class="cert-img" href={c.image} target="_blank" rel="noopener" aria-label={`${c.title} belgesini büyük aç`}>
             <img src={c.image} alt={`${c.title} sertifikası`} loading="lazy" decoding="async" />
           </a>
           <div class="cert-body">
+            <p class="cert-area">{c.area}</p>
             <h3>{c.title}</h3>
-            <p class="cert-issuer">{c.issuer} <span>· {c.date}</span></p>
+            <p class="cert-issuer">{c.issuer}{c.date && <span> · {c.date}</span>}</p>
             {c.detail && <p class="cert-detail">{c.detail}</p>}
             <p class="cert-links">
               {c.verify && <a href={c.verify} target="_blank" rel="noopener">Doğrula ↗</a>}
@@ -46,17 +57,59 @@ const verifiable = CERTIFICATES.filter((c) => c.verify).length;
           </div>
         </article>
       ))}
+      </div>
     </div>
 
-    <div class="shead"><h2>Diğer eğitimler</h2><span class="label">belge talep üzerine</span></div>
-    <ul class="cert-list">
+    <div class="cert-group" data-cert-group>
+      <div class="shead"><h2>Diğer eğitimler</h2><span class="label">belge talep üzerine</span></div>
+      <ul class="cert-list">
       {others.map((c) => (
-        <li>
-          <b>{c.title}</b>
+        <li data-area={c.area}>
+          <span class="cert-name"><span class="cert-area">{c.area}</span><b>{c.title}</b></span>
           <span class="i">{c.issuer}{c.date && ` · ${c.date}`}</span>
           <span class="v" style="color:var(--ink-3)">{c.detail}</span>
         </li>
       ))}
-    </ul>
+      </ul>
+    </div>
+    <p class="cert-empty" data-cert-empty hidden>Bu alanda belge yok.</p>
   </main>
 </Base>
+
+<script>
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('#cert-filters button')];
+  const items = [...document.querySelectorAll<HTMLElement>('[data-area]')];
+  const groups = [...document.querySelectorAll<HTMLElement>('[data-cert-group]')];
+  const empty = document.querySelector<HTMLElement>('[data-cert-empty]');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function apply(area: string) {
+    buttons.forEach((button) => button.setAttribute('aria-pressed', String((button.dataset.f ?? 'all') === area)));
+    for (const item of items) {
+      const show = area === 'all' || item.dataset.area === area;
+      item.hidden = !show;
+      if (show) item.classList.add('in');
+    }
+    for (const group of groups) {
+      const visible = group.querySelectorAll<HTMLElement>('[data-area]:not([hidden])');
+      group.hidden = visible.length === 0;
+      const count = group.querySelector<HTMLElement>('[data-cert-count]');
+      if (count) count.textContent = String(visible.length);
+    }
+    if (empty) empty.hidden = items.some((item) => !item.hidden);
+    const url = new URL(location.href);
+    if (area === 'all') url.searchParams.delete('alan');
+    else url.searchParams.set('alan', area);
+    history.replaceState(null, '', url);
+  }
+
+  for (const button of buttons) {
+    button.addEventListener('click', () => apply(button.dataset.f ?? 'all'));
+  }
+
+  const wanted = new URLSearchParams(location.search).get('alan');
+  if (wanted && buttons.some((button) => button.dataset.f === wanted)) {
+    apply(wanted);
+    if (!reduce) document.getElementById('cert-filters')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
+</script>

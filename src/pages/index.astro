@@ -10,16 +10,10 @@ import { ROLES } from '../experience';
 import HeroCanvas from '../components/HeroCanvas.astro';
 import TechStrip from '../components/TechStrip.astro';
 import ContactLinks from '../components/ContactLinks.astro';
+import Icon from '../components/Icon.astro';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const featured = projects.filter((p) => p.data.featured);
-const count = (c: Category) => projects.filter((p) => p.data.categories.includes(c)).length;
-const FOCUS: { key: Category; title: string; sub: string }[] = [
-  { key: 'cv', title: 'Bilgisayarlı görü', sub: 'Çoklu hedef takibi, stereo derinlik, yüz tanıma' },
-  { key: 'ai', title: 'Yapay zekâ', sub: 'LLM ve RAG, Türkçe konuşma tanıma, cihaz üstü modeller' },
-  { key: 'sys', title: 'Savunma ve sistem', sub: 'Operatör arayüzleri, ağ ve SDN, arıza tespiti' },
-  { key: 'web', title: 'Full-stack ve mobil', sub: 'Sahada kullanılan API, web ve mobil uygulamalar' },
-];
 const recent =projects.filter((p) => !p.data.featured).sort((a, b) => b.data.year - a.data.year || a.data.order - b.data.order).slice(0, 6);
 ---
 <Base
@@ -31,34 +25,33 @@ const recent =projects.filter((p) => !p.data.featured).sort((a, b) => b.data.yea
     <section class="masthead hero">
       <HeroCanvas />
       <div class="wrap hero-inner">
-        <h1>Beyza Nur Kılıç</h1>
-        <p class="role">Bilgisayar Mühendisi · Bilgisayarlı görü, yapay zekâ ve sistem yazılımı</p>
-        <div class="intro">
-          <div>
-            <p class="label">Şu an</p>
-            <p>Papilon Savunma'da junior full-stack geliştirici. Bursa Uludağ Üniversitesi Bilgisayar Mühendisliği mezunu, Ankara'da.</p>
-          </div>
-          <div>
-            <p class="label">Ne yapıyorum</p>
-            <p class="lead">
-              Görüntüyü anlamlandıran sistemler, sahada internetsiz çalışan modeller ve bunları kullanan
-              arayüzler geliştiriyorum. <em>Bir şeyin çalıştığını söylemeden önce ölçüyorum.</em>
+        <div class="hero-grid">
+          <div class="hero-main">
+            <p class="eyebrow"><span class="dot" aria-hidden="true"></span>Bilgisayar Mühendisi · Ankara</p>
+            <h1>Beyza Nur Kılıç</h1>
+            <p class="hero-lead">
+              Bilgisayarlı görü, yapay zekâ ve savunma sistemleri için uçtan uca yazılım geliştiriyorum:
+              modelin eğitiminden sahada çalışan uygulamaya kadar.
             </p>
-            <ul class="focus">
-              {FOCUS.map((f) => (
-                <li>
-                  <a href={`/projeler?alan=${f.key}`}>
-                    <span class="focus-top"><b>{f.title}</b><small>{count(f.key)} proje</small></span>
-                    <span class="focus-sub">{f.sub}</span>
-                  </a>
-                </li>
-              ))}
+            <ul class="hero-meta">
+              <li><Icon name="briefcase" size={16} />Junior Full-Stack Developer, Papilon Savunma</li>
+              <li><Icon name="cap" size={16} />Bilgisayar Mühendisliği, Bursa Uludağ Üniversitesi</li>
             </ul>
+            <div class="hero-cta">
+              <a class="btn btn-primary" href="/projeler">Projeleri incele <Icon name="arrow" size={15} /></a>
+              <a class="btn" href="mailto:byznrklc01@gmail.com"><Icon name="mail" size={16} />İletişime geç</a>
+              <a class="btn btn-ghost" href="/hakkimda">Özgeçmiş</a>
+            </div>
+            <dl class="hero-stats">
+              <div><dt>Proje</dt><dd>{projects.length}</dd></div>
+              <div><dt>Açık kaynak</dt><dd>{projects.filter((p) => p.data.repo).length}</dd></div>
+              <div><dt>Sertifika</dt><dd>{CERTIFICATES.length}</dd></div>
+            </dl>
           </div>
-          <div>
-            <p class="label">Bağlantılar</p>
+          <aside class="hero-card" aria-label="İletişim">
+            <p class="label">İletişim</p>
             <ContactLinks />
-          </div>
+          </aside>
         </div>
       </div>
       <div class="hero-foot">

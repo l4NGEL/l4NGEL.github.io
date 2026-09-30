@@ -13,7 +13,14 @@ import ContactLinks from '../components/ContactLinks.astro';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const featured = projects.filter((p) => p.data.featured);
-const recent = projects.filter((p) => !p.data.featured).sort((a, b) => b.data.year - a.data.year || a.data.order - b.data.order).slice(0, 6);
+const count = (c: Category) => projects.filter((p) => p.data.categories.includes(c)).length;
+const FOCUS: { key: Category; title: string; sub: string }[] = [
+  { key: 'cv', title: 'Bilgisayarlı görü', sub: 'Çoklu hedef takibi, stereo derinlik, yüz tanıma' },
+  { key: 'ai', title: 'Yapay zekâ', sub: 'LLM ve RAG, Türkçe konuşma tanıma, cihaz üstü modeller' },
+  { key: 'sys', title: 'Savunma ve sistem', sub: 'Operatör arayüzleri, ağ ve SDN, arıza tespiti' },
+  { key: 'web', title: 'Full-stack ve mobil', sub: 'Sahada kullanılan API, web ve mobil uygulamalar' },
+];
+const recent =projects.filter((p) => !p.data.featured).sort((a, b) => b.data.year - a.data.year || a.data.order - b.data.order).slice(0, 6);
 ---
 <Base
   title="Beyza Nur Kılıç · Bilgisayar Mühendisi"
@@ -34,10 +41,19 @@ const recent = projects.filter((p) => !p.data.featured).sort((a, b) => b.data.ye
           <div>
             <p class="label">Ne yapıyorum</p>
             <p class="lead">
-              Kameradan gelen görüntüyü anlamlandıran görü sistemleri, sahada internetsiz çalışan modeller ve
-              bunları kullanan operatör arayüzleri geliştiriyorum. Bir şeyin çalıştığını söylemeden önce ölçüyorum;{" "}
-              <em>ölçüm beklediğim gibi çıkmadığında da onu yazıyorum.</em>
+              Görüntüyü anlamlandıran sistemler, sahada internetsiz çalışan modeller ve bunları kullanan
+              arayüzler geliştiriyorum. <em>Bir şeyin çalıştığını söylemeden önce ölçüyorum.</em>
             </p>
+            <ul class="focus">
+              {FOCUS.map((f) => (
+                <li>
+                  <a href={`/projeler?alan=${f.key}`}>
+                    <span class="focus-top"><b>{f.title}</b><small>{count(f.key)} proje</small></span>
+                    <span class="focus-sub">{f.sub}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
           <div>
             <p class="label">Bağlantılar</p>
@@ -47,7 +63,6 @@ const recent = projects.filter((p) => !p.data.featured).sort((a, b) => b.data.ye
       </div>
       <div class="hero-foot">
         <TechStrip />
-        <a class="scroll-cue" href="#icerik" aria-label="Aşağı kaydır"><span></span></a>
       </div>
     </section>
 

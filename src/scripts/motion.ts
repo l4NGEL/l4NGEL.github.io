@@ -182,5 +182,17 @@ for (const b of btns) {
         r.classList.add('refilter');
       }
     });
+    // Filtreli görünüm paylaşılabilsin: /projeler?alan=cv
+    const url = new URL(location.href);
+    if (f === 'all') url.searchParams.delete('alan');
+    else url.searchParams.set('alan', f);
+    history.replaceState(null, '', url);
   });
+}
+// Ana sayfadaki alan bağlantılarından gelindiyse o filtreyle aç ve listeye in
+const wanted = new URLSearchParams(location.search).get('alan');
+const target = wanted && btns.find((b) => b.dataset.f === wanted);
+if (target) {
+  target.click();
+  document.getElementById('filters')?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
 }

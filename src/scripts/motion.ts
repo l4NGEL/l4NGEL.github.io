@@ -118,12 +118,15 @@ function drawDiagram(fig: Element) {
 /* ---------- Üst menü: kaydırınca gölge; okuma ilerleme çubuğu ---------- */
 const bar = document.querySelector<HTMLElement>('.progress');
 const onPage = !!document.querySelector('.prose');
+const heroEl = document.querySelector<HTMLElement>('.hero');
 let ticking = false;
 function onScroll() {
   if (ticking) return;
   ticking = true;
   requestAnimationFrame(() => {
     root.classList.toggle('scrolled', scrollY > 8);
+    // Ana sayfada koyu açılış bandı geçilince üst menü açık temaya döner
+    if (heroEl) root.classList.toggle('past-hero', scrollY > heroEl.offsetHeight - 64);
     if (bar && onPage) {
       const max = document.documentElement.scrollHeight - innerHeight;
       bar.style.transform = `scaleX(${max > 0 ? Math.min(1, scrollY / max) : 0})`;

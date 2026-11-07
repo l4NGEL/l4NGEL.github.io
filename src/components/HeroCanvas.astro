@@ -18,7 +18,7 @@
   let colors = { ink: '#6b717b', accent: '#1f4f82' };
 
   const readColors = () => {
-    const cs = getComputedStyle(document.documentElement);
+    const cs = getComputedStyle(canvas);
     colors = { ink: cs.getPropertyValue('--ink-3').trim() || colors.ink, accent: cs.getPropertyValue('--accent').trim() || colors.accent };
   };
 
@@ -76,7 +76,7 @@
     for (let i = 0; i < targets.length; i++) for (let j = i + 1; j < targets.length; j++) {
       const a = targets[i], b = targets[j], d = Math.hypot(a.x - b.x, a.y - b.y);
       if (d > 170) continue;
-      ctx.globalAlpha = (1 - d / 170) * 0.16;
+      ctx.globalAlpha = (1 - d / 170) * 0.26;
       ctx.strokeStyle = colors.ink;
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
     }
@@ -84,12 +84,12 @@
     for (const t of targets) {
       const on = t === lock, col = on || t.hot ? colors.accent : colors.ink;
       // İz
-      ctx.strokeStyle = col; ctx.globalAlpha = on ? 0.45 : 0.18;
+      ctx.strokeStyle = col; ctx.globalAlpha = on ? 0.6 : 0.26;
       ctx.beginPath();
       t.trail.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
       ctx.stroke();
       // Nokta, kutu, etiket
-      ctx.globalAlpha = on ? 0.95 : t.hot ? 0.55 : 0.4;
+      ctx.globalAlpha = on ? 1 : t.hot ? 0.8 : 0.55;
       ctx.fillStyle = col;
       ctx.beginPath(); ctx.arc(t.x, t.y, on ? 2.6 : 1.8, 0, Math.PI * 2); ctx.fill();
       ctx.lineWidth = on ? 1.6 : 1.1;

@@ -14,6 +14,13 @@ import Icon from '../components/Icon.astro';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const featured = projects.filter((p) => p.data.featured);
+// Sertifikaları bitiş tarihine göre yeniden eskiye sırala; ana sayfada yalnız en yenileri
+const AYLAR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+const certKey = (date: string, year: number) => {
+  const m = [...date.matchAll(/(\p{L}+) (\d{4})/gu)].pop();
+  return m ? Number(m[2]) * 12 + AYLAR.indexOf(m[1]) : year * 12;
+};
+const latestCerts = CERTIFICATES.filter((c) => c.year).sort((a, b) => certKey(b.date, b.year) - certKey(a.date, a.year)).slice(0, 6);
 const recent =projects.filter((p) => !p.data.featured).sort((a, b) => b.data.year - a.data.year || a.data.order - b.data.order).slice(0, 6);
 ---
 <Base
@@ -133,10 +140,10 @@ const recent =projects.filter((p) => !p.data.featured).sort((a, b) => b.data.yea
 
       <div class="shead">
         <h2>Sertifikalar</h2>
-        <a class="readmore" style="margin:0" href="/sertifikalar">Tümü ve belgeler →</a>
+        <a class="readmore" style="margin:0" href="/sertifikalar">Tümü ({CERTIFICATES.length}) ve belgeler →</a>
       </div>
       <ul class="cert-list">
-        {CERTIFICATES.filter((c) => c.year).map((c) => (
+        {latestCerts.map((c) => (
           <li>
             <b>{c.title}</b>
             <span class="i">{c.issuer} · {c.date}</span>

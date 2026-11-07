@@ -74,6 +74,11 @@ const open = projects.filter((p) => p.data.repo).length;
         return (
           <li data-cat={d.categories.join(' ')}>
             <a class="prow" href={`/projeler/${p.id}`}>
+              {(d.thumb ?? d.cover?.src) ? (
+                <img class="prow-thumb" src={d.thumb ?? d.cover?.src} alt="" loading="lazy" decoding="async" width="112" height="70" />
+              ) : (
+                <span class="prow-thumb prow-thumb-ph" aria-hidden="true">{d.stack[0]}</span>
+              )}
               <div class="prow-head">
                 <span class="prow-t" style={d.featured ? undefined : `view-transition-name: p-${p.id}`}>{d.title}</span>
                 <span class="prow-cats">

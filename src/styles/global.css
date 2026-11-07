@@ -739,3 +739,45 @@ html.page-work { --max: min(1560px, calc(100vw - 48px)); }
   .prow-metric b { font-size: 18px; }
   .prow-end { justify-content: space-between; }
 }
+
+/* ------------------------------------------------------------
+   Koyu açılış bandı (iki temada da koyu). Renkler yalnız bu
+   bölgede yeniden tanımlanır; içindeki bileşenler kendiliğinden uyar.
+   ------------------------------------------------------------ */
+.hero, html.page-home:not(.past-hero) .topbar {
+  --paper: #0c1420; --paper-2: #131e2e; --ink: #eef0f3; --ink-2: #b6bec9; --ink-3: #7e8a9b;
+  --rule: #26354a; --rule-soft: #1b283a; --accent: #8db4e2; --accent-ink: #a8c6ea; --accent-soft: #17253b;
+  color: var(--ink);
+}
+.hero {
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(rgba(141, 180, 226, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(141, 180, 226, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  border-bottom: 0;
+}
+.hero h1 { color: var(--ink); }
+.hero .eyebrow { color: var(--accent-ink); }
+.hero .btn-primary { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.hero .btn-primary:hover { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+.hero .hero-stats dd { color: var(--ink); }
+.hero-bg {
+  -webkit-mask-image: radial-gradient(ellipse 60% 60% at 34% 50%, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.55) 45%, #000 85%);
+  mask-image: radial-gradient(ellipse 60% 60% at 34% 50%, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.55) 45%, #000 85%);
+}
+html.page-home:not(.past-hero) .topbar { background: var(--paper); border-bottom-color: var(--rule-soft); }
+html.page-home:not(.past-hero).scrolled .topbar { box-shadow: none; }
+
+/* Proje listesinde küçük önizleme; görseli olmayan projede ana teknoloji */
+.prow-thumb { display: block; width: 112px; height: 70px; border-radius: 6px; object-fit: cover; object-position: center top; border: 1px solid var(--rule); background: #0c1420; }
+@media (min-width: 960px) { .prow { grid-template-columns: 112px 3fr 5.5fr 2fr auto; column-gap: 28px; } }
+@media (max-width: 959px) { .prow-thumb { display: none; } }
+.prow-thumb-ph {
+  display: flex; align-items: flex-end; padding: 8px 10px; box-sizing: border-box;
+  font: 500 12px/1 var(--mono); color: #a8c6ea;
+  background-color: #0c1420;
+  background-image: linear-gradient(rgba(141, 180, 226, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(141, 180, 226, 0.08) 1px, transparent 1px);
+  background-size: 14px 14px; border-color: #26354a;
+}
+.prow:hover .prow-thumb { border-color: var(--accent); }

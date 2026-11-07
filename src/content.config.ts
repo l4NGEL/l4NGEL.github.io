@@ -20,6 +20,7 @@ const projects = defineCollection({
     codeNote: z.string().optional(),
     repo: z.string().url().optional(),
     cover: z.object({ src: z.string(), alt: z.string() }).optional(),
+    thumb: z.string().optional(),
     diagram: z.string().optional(),
   }),
 });

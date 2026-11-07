@@ -56,8 +56,8 @@ DenseAE ONNX'e aktarıldı ve C++ ile ONNX Runtime üzerinden çalışıyor. Ayn
 
 | Hassasiyet | Maks. fark | Korelasyon |
 |---|---|---|
-| FP32 | 4.5e-6 | 1.000000 |
-| INT8 | ~0.05 | 1.000000 |
+| FP32 | 4,5·10⁻⁶ | 1,000000 |
+| INT8 | ~0,05 | 1,000000 |
 
 INT8 farkı, Python wheel'i ile C++ SDK'nın nicemlenmiş çekirdekleri arasındaki sayısal fark. Sıralama bozulmuyor. C++ gecikmesi P50 yaklaşık 0,02 ms. x86 CPU'da FP32 P95, DenseAE için 0,16 ms; kabul çizgisi 150 ms idi.
 

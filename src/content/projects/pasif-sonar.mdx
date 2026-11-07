@@ -20,12 +20,12 @@ import Figure from '../../components/Figure.astro';
 
 ## Fikir
 
-10 saniyelik tek bir ses kesitinden verilen karar zayıf: %60.3 doğruluk. Aynı model bir geminin tüm pencereleri üzerinden ortalandığında doğruluk %83.6'ya çıkıyor. Bu yüzden ürünü "daha sert tahmin" üzerine değil, bir güven kapısı üzerine kurdum:
+10 saniyelik tek bir ses kesitinden verilen karar zayıf: %60,3 doğruluk. Aynı model bir geminin tüm pencereleri üzerinden ortalandığında doğruluk %83,6'ya çıkıyor. Bu yüzden ürünü "daha sert tahmin" üzerine değil, bir güven kapısı üzerine kurdum:
 
 | Zorunlu sınıflandırıcı | Bu sistem |
 |---|---|
-| Kargo 0.43 / Tanker 0.39 → Kargo | **BELİRSİZ, takibe devam** |
-| Kargo 0.89 → Kargo | **KARGO, EMİN** |
+| Kargo 0,43 / Tanker 0,39 → Kargo | **BELİRSİZ, takibe devam** |
+| Kargo 0,89 → Kargo | **KARGO, EMİN** |
 
 ## Hat
 
@@ -39,13 +39,13 @@ Hidrofon sesi 10 saniyelik pencerelere bölünüyor, her pencere bir CNN'den ge�
 
 | Ölçüt | Sonuç |
 |---|---|
-| Kesit doğruluğu | %60.3 |
-| Gemi doğruluğu | **%83.6** |
-| Makro-F1 | 0.719 |
-| Çoğunluk tabanı | %75.4 |
-| Seçici doğruluk | %92.9, kapsam %68.9 |
+| Kesit doğruluğu | %60,3 |
+| Gemi doğruluğu | **%83,6** |
+| Makro-F1 | 0,719 |
+| Çoğunluk tabanı | %75,4 |
+| Seçici doğruluk | %92,9, kapsam %68,9 |
 
-%92.9 genel test doğruluğu değil; yalnızca sistemin kabul ettiği temaslardaki performans. Temasların %31.1'i belirsiz olarak geri çevriliyor. Eşikleri test gemilerini puanlamadan önce validasyonda dondurdum.
+%92,9 genel test doğruluğu değil; yalnızca sistemin kabul ettiği temaslardaki performans. Temasların %31,1'i belirsiz olarak geri çevriliyor. Eşikleri test gemilerini puanlamadan önce validasyonda dondurdum.
 
 ## Veri
 

@@ -47,8 +47,8 @@ Derinliğin kimlik korumaya katkısını ölçmek için, yakın (~2 m) ve uzak (
 
 | Yöntem | MOTA | IDF1 | ID kayması |
 |---|---|---|---|
-| 3B Mahalanobis + Hungarian | 0.979 | **0.989** | 0 |
-| 2B IoU + Hungarian | 0.929 | 0.543 | 2 |
+| 3B Mahalanobis + Hungarian | 0,979 | **0,989** | 0 |
+| 2B IoU + Hungarian | 0,929 | 0,543 | 2 |
 
 Bu kontrollü bir senaryo; 3B takibin her zaman 2B'den iyi olduğu anlamına gelmiyor. Gerçek veride durum farklı çıktı.
 
@@ -58,8 +58,8 @@ CLEAR-MOT (MOTA, MOTP, ID kayması, parçalanma) ve IDF1'i kendim yazdım; doğr
 
 | Yöntem | MOTA | IDF1 | FP | FN | Recall |
 |---|---|---|---|---|---|
-| 3B Mahalanobis | −2.30 | 0.182 | 2195 | 121 | 0.830 |
-| 2B IoU | −2.14 | 0.187 | 1980 | 214 | 0.699 |
+| 3B Mahalanobis | −2,30 | 0,182 | 2195 | 121 | 0,830 |
+| 2B IoU | −2,14 | 0,187 | 1980 | 214 | 0,699 |
 
 İlk açıklamam KITTI etiketlerinin eksik olduğuydu. Bağımsız değerlendirmede bunun yanlış pozitiflerin yalnızca ~%10'unu açıkladığını buldum. Kalan ~%90, tespit kaybolduktan sonra takipçinin raporlamaya devam ettiği "hayalet" izlerdi. README'deki açıklamayı yerinde düzelttim.
 
@@ -69,19 +69,19 @@ Değişiklik yapmadan önce gerçek hattı profilledim:
 
 | Aşama | Kare başına süre |
 |---|---|
-| Stereo eşleştirme | 152.8 ms |
-| Görüntü okuma | 137.9 ms |
-| Tespit | 49.5 ms |
+| Stereo eşleştirme | 152,8 ms |
+| Görüntü okuma | 137,9 ms |
+| Tespit | 49,5 ms |
 | Derinlik, 3B'ye taşıma, görünüm | 2 ms'den az |
-| Takip | 0.19 ms |
+| Takip | 0,19 ms |
 
-En pahalı algoritmik adım stereo eşleştirmeydi. Karolara bölünmüş paralel eşleştirmeyle takip metriklerini birebir koruyarak görüntü okuma hariç 4.9 FPS'ten 7.8 FPS'e çıktım. CUDA ile ilk karşılaştırmam "hızlanma yok" diyordu; tüm karelerin ortalamasını almıştım ve bir kerelik ~2.3 saniyelik CUDA başlatma süresi sonucu bozuyordu. Kararlı durumda CUDA tespiti 12 – 17 ms, CPU ~52 ms. Bu hatayı da raporda düzelttim.
+En pahalı algoritmik adım stereo eşleştirmeydi. Karolara bölünmüş paralel eşleştirmeyle takip metriklerini birebir koruyarak görüntü okuma hariç 4,9 FPS'ten 7,8 FPS'e çıktım. CUDA ile ilk karşılaştırmam "hızlanma yok" diyordu; tüm karelerin ortalamasını almıştım ve bir kerelik ~2,3 saniyelik CUDA başlatma süresi sonucu bozuyordu. Kararlı durumda CUDA tespiti 12 – 17 ms, CPU ~52 ms. Bu hatayı da raporda düzelttim.
 
 ## Görsel odometri
 
 Tek kamera ölçeği bilemez; esas matristen yalnızca hareketin yönü çıkar. Ölçeği önceki fazlarda kurduğum stereo derinlikten çözüyorum: her iki karede de 3B noktası olan eşleşmeler için `X_şimdi = R·X_önce + s·t` denklemini nokta nokta `s` için çözüp medyanı alıyorum. Bu matematiği C++'a geçmeden önce Python'da bilinen bir sentetik kamera hareketiyle doğruladım; dönüş, ölçek ve konum 1e-14 hassasiyetle tuttu.
 
-KITTI odometry 04 sekansında (271 kare) KITTI segment metriği t_rel %14.0 çıktı. Bu, demet ayarlama ve döngü kapatma olmayan kareden kareye bir odometri; SLAM düzeyindeki sistemlerin (%1'in altı) çok gerisinde.
+KITTI odometry 04 sekansında (271 kare) KITTI segment metriği t_rel %14,0 çıktı. Bu, demet ayarlama ve döngü kapatma olmayan kareden kareye bir odometri; SLAM düzeyindeki sistemlerin (%1'in altı) çok gerisinde.
 
 ## ROS2
 

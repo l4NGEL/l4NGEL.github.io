@@ -20,7 +20,7 @@ repo: https://github.com/l4NGEL/teknikyaz-asistan
 
 ## Retrieval
 
-Yoğun arama (e5) ve BM25 adayları Reciprocal Rank Fusion ile birleşiyor; cross-encoder yeniden sıralayıcı yalnızca *ek* bir skor. İlk tasarımda yeniden sıralayıcı tek hakemdi ve "README şablonu" belgesi ilk beşten düşüyordu. Füzyona geçince 32 soruluk altın kümede P@1 **0.66'dan 1.00'a**, Recall@5 1.00'a çıktı.
+Yoğun arama (e5) ve BM25 adayları Reciprocal Rank Fusion ile birleşiyor; cross-encoder yeniden sıralayıcı yalnızca *ek* bir skor. İlk tasarımda yeniden sıralayıcı tek hakemdi ve "README şablonu" belgesi ilk beşten düşüyordu. Füzyona geçince 32 soruluk altın kümede P@1 **0,66'dan 1,00'a**, Recall@5 1,00'a çıktı.
 
 Bir de sessiz bir hata buldum: belge başlıkları ne embedding'e ne BM25 indeksine ulaşıyordu. Düzeltince ilgili belgeler ilk 20 aday arasında 0'dan 14'e çıktı.
 
@@ -35,14 +35,14 @@ LangGraph ile: yönlendirici → getirme → yazar → eleştirmen (çelişki ve
 
 ## İnce ayar ve hizalama
 
-Qwen2.5-3B-Instruct üzerinde QLoRA ile parametrelerin yalnızca %0.24'ünü eğittim. Elle yazılmış birkaç örnekle yapılan ilk DPO denemesi davranışı değiştirmedi, üstüne modeli gereğinden fazla "bilmiyorum" diyen hale getirdi. Bunun üzerine korpustan kural tabanlı soru-cevap çiftleri çıkarıp SFT verisini yeniden kurdum.
+Qwen2.5-3B-Instruct üzerinde QLoRA ile parametrelerin yalnızca %0,24'ünü eğittim. Elle yazılmış birkaç örnekle yapılan ilk DPO denemesi davranışı değiştirmedi, üstüne modeli gereğinden fazla "bilmiyorum" diyen hale getirdi. Bunun üzerine korpustan kural tabanlı soru-cevap çiftleri çıkarıp SFT verisini yeniden kurdum.
 
 | Model | Cevaplanabilir | Uydurmama | Kapsam dışı | Genel | Aşırı ret |
 |---|---|---|---|---|---|
-| eski varsayılan (DPO v2) | 57.8 | 63.3 | 41.7 | 53.8 | 26.7 |
-| SFT tur 1 | 80.0 | 96.7 | 75.0 | 84.9 | 4.4 |
-| **SFT tur 2 (varsayılan)** | 86.7 | 100 | 91.7 | **92.5** | **2.2** |
-| SFT tur 2 + DPO, 128 çift | 82.2 | 96.7 | 75.0 | 86.0 | 6.7 |
+| eski varsayılan (DPO v2) | 57,8 | 63,3 | 41,7 | 53,8 | 26,7 |
+| SFT tur 1 | 80,0 | 96,7 | 75,0 | 84,9 | 4,4 |
+| **SFT tur 2 (varsayılan)** | 86,7 | 100 | 91,7 | **92,5** | **2,2** |
+| SFT tur 2 + DPO, 128 çift | 82,2 | 96,7 | 75,0 | 86,0 | 6,7 |
 
 Son satır önemli: 128 sentetik tercih çiftiyle yapılan DPO, SFT'ye göre geriletti. Varsayılan modeli bu yüzden DPO'suz bıraktım.
 
@@ -50,11 +50,11 @@ Son satır önemli: 128 sentetik tercih çiftiyle yapılan DPO, SFT'ye göre ger
 
 | Katman | Sonuç |
 |---|---|
-| Türkçe belge sınıflandırıcı (BERTurk) | doğruluk 0.955, makro F1 0.972 |
-| 4-bit NF4 üretim, 64 token, RTX 2080 | P95 6.4 sn, 5.8 GB VRAM |
+| Türkçe belge sınıflandırıcı (BERTurk) | doğruluk 0,955, makro F1 0,972 |
+| 4-bit NF4 üretim, 64 token, RTX 2080 | P95 6,4 sn, 5,8 GB VRAM |
 | DistilBERT'e damıtma | gecikme ~%49 düştü |
 
-Sınıflandırıcıda F1 bir aşamada 0.32'ydi ama doğruluk yüksek görünüyordu; sebep zayıf denetimli etiketlemedeki sessiz bir hataydı. Güvenlik modülü de bir süre 5 sınıflı bir modelin çıktısını ikili sandığı için sessizce işlevsizdi; 8 regresyon testiyle düzelttim.
+Sınıflandırıcıda F1 bir aşamada 0,32'ydi ama doğruluk yüksek görünüyordu; sebep zayıf denetimli etiketlemedeki sessiz bir hataydı. Güvenlik modülü de bir süre 5 sınıflı bir modelin çıktısını ikili sandığı için sessizce işlevsizdi; 8 regresyon testiyle düzelttim.
 
 ## Sınırlamalar
 

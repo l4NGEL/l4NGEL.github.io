@@ -39,21 +39,21 @@ Test bölmesi, 12 modül ve 4.800 örnek:
 
 | Yöntem | Tespit kapsamı | Yanlış alarm | Geçici sıçrama yakalama | Tespite kadar örnek |
 |---|---|---|---|---|
-| Kural tabanlı, \|z\| > 3 | %91.5 | %1.2 | %81.8 | 14.2 |
-| IsolationForest, denetimsiz | %86.3 | %7.6 | %36.4 | 7.3 |
-| **Random Forest, denetimli** | **%93.3** | **%0.9** | **%90.9** | 12.3 |
+| Kural tabanlı, \|z\| > 3 | %91,5 | %1,2 | %81,8 | 14,2 |
+| IsolationForest, denetimsiz | %86,3 | %7,6 | %36,4 | 7,3 |
+| **Random Forest, denetimli** | **%93,3** | **%0,9** | **%90,9** | 12,3 |
 
 Random Forest en iyi sonucu veriyor ama etiketli arıza geçmişi istiyor. IsolationForest etiket istemiyor ama yanlış alarmı 6 kat daha fazla. Gerçek bir sistemde ikisini birlikte kullanırdım: bilinen arızalar için Random Forest, yeni ve bilinmeyen arıza tipleri için IsolationForest.
 
 ## Teşhis
 
-4 sınıfta **%96.8 izolasyon doğruluğu** (1.384 test örneği). Tek karışıklık osilatör kayması ile termal arıza arasında; ikisi de yavaş başlayan arızalar olduğu için erken evrede birbirine benzemeleri beklenen bir durum.
+4 sınıfta **%96,8 izolasyon doğruluğu** (1.384 test örneği). Tek karışıklık osilatör kayması ile termal arıza arasında; ikisi de yavaş başlayan arızalar olduğu için erken evrede birbirine benzemeleri beklenen bir durum.
 
 ## Yanlış alarm ve kalan ömür
 
-Yanlış alarm sınıflandırıcısı geçici sıçramaların %100'ünü bastırıyor, ama bunun bedeli bazı gerçek arızaları da yanlış alarm sanması (gerçek arıza sınıfında F1 %54.5). 51 olaydan yalnızca 16'sı gerçek arıza; küçük ve dengesiz bir küme. Gerçek bir sistemde bu, kaçırılan arıza ile gereksiz bakımın maliyetine göre ayarlanacak bir eşik kararı; olasılık çıktısını gösterge panelinde bu yüzden gösteriyorum.
+Yanlış alarm sınıflandırıcısı geçici sıçramaların %100'ünü bastırıyor, ama bunun bedeli bazı gerçek arızaları da yanlış alarm sanması (gerçek arıza sınıfında F1 %54,5). 51 olaydan yalnızca 16'sı gerçek arıza; küçük ve dengesiz bir küme. Gerçek bir sistemde bu, kaçırılan arıza ile gereksiz bakımın maliyetine göre ayarlanacak bir eşik kararı; olasılık çıktısını gösterge panelinde bu yüzden gösteriyorum.
 
-Kalan ömür tahmininde 4 kademeli arızalı test modülünde ortalama mutlak hata 4.7 örnek; bozulma süresinin %3 – 4'ü kadar.
+Kalan ömür tahmininde 4 kademeli arızalı test modülünde ortalama mutlak hata 4,7 örnek; bozulma süresinin %3 – 4'ü kadar.
 
 ## Sınırlamalar
 

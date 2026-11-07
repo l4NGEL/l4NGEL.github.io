@@ -1,0 +1,45 @@
+---
+title: "Fiş Cüzdan"
+tagline: "Fişin fotoğrafından mağaza, toplam, KDV ve ürünler; OCR telefonun içinde."
+summary: "Fişin fotoğrafını çekince mağazayı, tarihi, toplamı, KDV'yi, kategoriyi ve her ürünü dolduran bir Android uygulaması. Okuttuğun fişlerden ürün başına fiyat geçmişi çıkıyor; abonelikler, ödeme hatırlatmaları ve zip yedek de var. Fiş hiçbir sunucuya gitmiyor."
+categories: [web]
+order: 24
+period: Kasım 2026
+year: 2026
+stack: [Kotlin, Jetpack Compose, ML Kit, Room, WorkManager, kotlinx.serialization]
+metrics:
+  - { value: '50', label: 'birim testi; gerçek OCR çıktısından örnekler dahil' }
+  - { value: '0', label: 'fişin gittiği sunucu; OCR cihazda' }
+repo: https://github.com/l4NGEL/fis-cuzdan
+cover:
+  src: /images/fis-cuzdan/kapak.webp
+  alt: Dört farklı temada ana ekran ve ürün fiyat takibi
+---
+
+## Fişi okuma
+
+ML Kit metni bloklar halinde döndürüyor ve "TOPLAM" ile "*337,40" ayrı bloklara düşebiliyor. `RowAssembler` blokları dikey merkezlerine göre birleştirip fişi kâğıttaki düzeniyle yeniden kuruyor.
+
+Ayrıştırıcı Türk yazar kasa fişlerinin düzenine göre yazıldı. Toplam önce `GENEL TOPLAM`, sonra `TOPLAM` satırından okunuyor; `ARA TOPLAM`, `TOPKDV`, `NAKİT` ve `PARA ÜSTÜ` toplam sayılmıyor. Etiket hiç okunamazsa kalemlerin toplamı alınıyor ve bu açıkça işaretleniyor; kullanıcı fişle karşılaştırıp onaylayana kadar uyarı kalıyor.
+
+Ürünler adı, adedi ("2 ad × 12,50", "1,250 kg × 39,90") ve fiyatıyla tek tek çıkıyor, indirim satırları eksi kalem oluyor. Kalemlerin toplamı fiş toplamıyla karşılaştırılıyor; tutmazsa fark gösteriliyor, böylece atlanan bir satır ilk bakışta belli oluyor.
+
+Emülatördeki gerçek OCR çıktısında gördüğüm hataları teste ekledim. ML Kit ondalık ayracın yanına boşluk sokabiliyor ("*165, 50"). Tutar deseni tarihleri dışarıda bırakıyor; `04.11.2026` hiçbir zaman 4,11 ₺ olmuyor. OCR Türkçe harfi kaybedip "MOTORIN" okursa ad "Motorın" değil "Motorin" yazılıyor.
+
+## Fiyat geçmişi
+
+Okuttuğun fişlerden ürün başına bir fiyat geçmişi kendiliğinden oluşuyor. Aynı ürün farklı fişlerde farklı yazılsa da eşleniyor ("SÜT 1 L", "Sut 1l"). Adetli ve kiloluk alışverişlerde birim fiyat karşılaştırılıyor. Son 90 günde birden çok mağazadan alınan üründe en ucuz son fiyatı veren mağaza gösteriliyor; "BİM" ile "BIM BIRLESIK MAGAZALAR A.S." aynı mağaza sayılıyor.
+
+## Abonelik ve hatırlatma
+
+Abonelikler ve otomatik ödeme talimatları ayrı bir sayfada: haftalık, aylık, üç aylık ve yıllık periyot. Ayın 31'inde başlayan ödeme Şubat'ta 28'ine, Mart'ta yine 31'ine düşüyor; kayma birikmiyor. Hatırlatmayı WorkManager her sabah kontrol ediyor. Telefon kapalı kaldığı için bir kontrol atlanırsa hatırlatma ertesi gün yine geliyor, ama aynı bildirim iki kez gitmiyor. Kart ya da hesap numarası istenmiyor ve saklanmıyor.
+
+## Veri
+
+Tutarlar kuruş cinsinden `Long` tutuluyor; kayan nokta yok. Fotoğraf en fazla 2000 piksele küçültülüp EXIF yönü düzeltilerek uygulamanın kendi klasörüne kopyalanıyor. Room göçleri eski kayıtları koruyor.
+
+Yedek tek bir `.zip` dosyası: fişler, ürünler, fotoğraflar, düzenli ödemeler ve bütçe. Geri yüklemeden önce dosya baştan sona okunup doğrulanıyor; bozuk ya da daha yeni bir sürümden kalma yedekte mevcut veriye dokunulmuyor. Veritabanı tek işlemde değişiyor. Zipteki dosya yolları doğrudan kullanılmıyor, yalnız güvenli dosya adları alınıyor.
+
+## Sınır
+
+OCR'ı emülatörde, ML Kit'in gerçek çıktısıyla, üretilmiş fiş görüntüleri üzerinde denedim. Buruşuk, soluk ya da eğik çekilmiş kâğıt fişte okuma daha zayıf olabilir; bu yüzden her alan kaydetmeden önce düzeltilebiliyor. Birim testleri iş kurallarının bulunduğu `domain/` katmanını kapsıyor, arayüz testi yok. ML Kit kütüphanesi Google'ın anonim kullanım istatistikleri için internet izni ekliyor; fiş görüntüsü bunlara dahil değil.

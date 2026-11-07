@@ -1,0 +1,96 @@
+---
+title: "İHA Takip"
+tagline: "Termal kamerada küçük İHA tespiti ve takibi; görüntüden gimbal mesajına 4 ms."
+summary: "Termal videoda küçük drone'ları bulan, takip eden ve hedefin yerini gimbal için açı hatasına çeviren bir hat. Model Python'da eğitildi; çalışma zamanı C++17, CUDA ve TensorRT. Bütün sayılar eğitimde ve ayar seçiminde hiç kullanılmamış 120 test dizisinden."
+categories: [cv, ai, sys]
+order: 5
+period: Ekim – Kasım 2026
+year: 2026
+stack: [C++17, CUDA, TensorRT, YOLO26, ByteTrack, OpenCV, Python, PyTorch, GStreamer]
+metrics:
+  - { value: '0,857', label: 'tespit AP50, 120 test dizisi' }
+  - { value: '4,08 ms', label: 'görüntüden mesaja p50, RTX 2080 FP16' }
+  - { value: '0,70°', label: 'gimbal benzetiminde RMS işaretleme hatası' }
+repo: https://github.com/l4NGEL/iha-takip
+---
+import Figure from '../../components/Figure.astro';
+
+## Hat
+
+Kare ayrı bir iş parçacığında yakalanır; hep en son kare işlenir. Letterbox, BGR→RGB ve CHW dönüşümü tek bir CUDA kernelinde yapılır. YOLO26 TensorRT'de FP16 koşar; model uçtan uca, NMS'siz. Tespitler ByteTrack'e gider: Kalman öngörüsü, DIoU maliyeti, iki aşamalı eşleşme. Kilitli hedefin piksel konumu azimut ve elevasyon hatasına çevrilir, gecikme telafisi eklenir ve 54 baytlık, CRC'li bir UDP mesajıyla gönderilir.
+
+Çalışma zamanı Python içermez. Takip, açı hatası, PID, protokol, UDP ve optik akışla kamera hareketi kestirimi GPU olmadan da derlenen bir çekirdekte. CI'da `-Werror`, ASan ve UBSan altında 59 GoogleTest koşuyor.
+
+Model Anti-UAV410 termal videolarında eğitildi ve resmi train/val/test bölümüyle değerlendirildi. Eşikleri ve takip ayarlarını val dizilerinde seçtim; tespit testini bir kez koştum.
+
+## Tespit
+
+Test, 120 dizi ve 129.691 kare. Eşik val'de 0,415 seçildi.
+
+| Hedef boyutu (√alan) | AP50 | Precision | Recall |
+|---|---|---|---|
+| Hepsi | 0,857 | 0,943 | 0,796 |
+| 16 px altı | 0,700 | 0,853 | 0,604 |
+| 16–32 px | 0,888 | 0,964 | 0,844 |
+| 32 px ve üstü | 0,919 | 0,979 | 0,888 |
+
+Hedefsiz karelerin %6,8'inde yanlış alarm var. Örtülmüş hedeflerde AP50 0,01; model örtülen hedefi neredeyse hiç bulamıyor.
+
+Küçük hedefler için ek bir stride-4 başlığı (P2) denedim. Önceden sabitlediğim kurala göre seçildi, ama fark ne val'de ne testte anlamlı çıktı: dizi düzeyinde bootstrap ile −0,001 [−0,008, +0,007]. Daha ucuz standart başlık da aynı işi görürdü.
+
+## Takip
+
+Anti-UAV durum doğruluğu (SA): hedef varsa tahmin kutusunun IoU'su, yoksa "yok" denmişse 1.
+
+| | Takipsiz, her karede en iyi tespit | ByteTrack + Kalman | + kamera hareketi telafisi |
+|---|---|---|---|
+| SA | 0,648 | 0,677 | 0,678 |
+| Küçük hedefte ortalama IoU | 0,536 | 0,616 | 0,617 |
+| Hızlı harekette SA | 0,425 | 0,486 | 0,486 |
+| Hedefsiz karede doğru "yok" | 0,942 | 0,809 | 0,809 |
+
+Son sürüm takipsiz tabana göre +0,030 SA [0,021, 0,040] getiriyor ve 120 dizinin 109'unda daha iyi. Bedeli drone yokken çıktı verme oranının artması. `--out-score 0.5` ile doğru "yok" oranı 0,81'den 0,90'a çıkıyor, SA 0,648'e iniyor. Yanlış alarmın pahalı olduğu bir görevde açılacak bir ayar olarak bıraktım.
+
+Anti-UAV410 tablosundaki tek nesne izleyicileri ilk karede gerçek kutuyla başlatılıyor. Bu hat hiç gerçek kutu almadığı için o tablolarla doğrudan karşılaştırılamaz.
+
+## Gecikme
+
+RTX 2080, TensorRT 10.8 FP16, 5.948 kare, her aşama senkron ölçüldü.
+
+| Aşama | p50 | p99 |
+|---|---|---|
+| GPU'ya yükleme | 0,29 ms | 0,60 ms |
+| CUDA ön işleme | 0,11 ms | 0,45 ms |
+| TensorRT çıkarım | 3,54 ms | 5,82 ms |
+| Takip | 0,01 ms | 0,03 ms |
+| Uçtan uca, görüntüden mesaja | 4,08 ms | 6,57 ms |
+
+GStreamer ile 30 fps beslenen canlı akışta uçtan uca p50 8,7 ms, p99 18,5 ms. Çıkarım bu kipte iki kat uzuyor; kareler arasında GPU'nun saat hızını düşürmesinden şüpheleniyorum, doğrulamadım. 994 mesajın hepsi CRC'den geçti, sıra numarasında boşluk yok.
+
+CUDA ön işleme, Ultralytics letterbox ve numpy referansıyla bit düzeyinde aynı. TensorRT FP16 ile ONNX Runtime FP32 arasında 200 karede en iyi kutunun IoU'su ortalama 0,988, eşik kararı hepsinde aynı.
+
+INT8'i de denedim ve kullanmadım. Val'de AP50 0,868'den 0,842'ye, 16 pikselden küçük hedeflerde recall 0,519'dan 0,005'e düştü. Bu GPU'da %8–12'lik hız kazancı buna değmedi.
+
+## Gimbal
+
+<Figure n={1} src="/images/iha-takip/gimbal-sim.webp" caption="Gimbal benzetimi: 30 fps kamera, tespitlerin %20'si kayıp, 16°/sn'ye kadar manevra yapan hedef" bare />
+
+Gerçek bir gimbal yok; kapalı döngüyü benzetimde ölçtüm. İki eksenli, hız ve ivme sınırlı bir gimbal, test recall'una uyan %20 tespit kaybı ve 1 piksellik gürültü. Her değer 20 rastgele tohumun ortalaması.
+
+| Denetleyici | 6 ms gecikme | 33 ms | 66 ms |
+|---|---|---|---|
+| Ham tespit + PID | 1,75° | 1,83° | 1,93° |
+| Takip + PID | 1,45° | 1,51° | 1,59° |
+| Takip + gecikme telafisi + hedef hızı ileri besleme | 0,70° | 0,87° | 1,13° |
+
+İlk tasarımda kilitli hedef, eşleşmesiz kaldığında da birkaç kare öngörüyle sürdürülüyordu. Kilit bir parazite takılınca gerçek hedef o süre boyunca kaçırılıyordu; val'de bu takipsiz tabandan bile kötüydü (SA 0,50, taban 0,71). Kilidi, aynı karede ölçülmüş başka bir onaylı takip varsa ona yol verecek şekilde değiştirdim; SA 0,72'ye çıktı. Benzetimde gimbalin hedefi kaybedip 31° hataya kaçmasının nedeni de buydu.
+
+## Yer istasyonuyla
+
+<Figure n={2} src="/images/iha-takip/gcs-takip.webp" caption="Yer istasyonunda termal video, hedef kutusu ve otomatik gimbal takibi" />
+
+Hat, [Yer İstasyonu](/projeler/yer-istasyonu-qt) ile birlikte çalışıyor. Her kare için hedef mesajı ve RTP/H.264 olarak işlenmiş kare gidiyor. Yer istasyonu kutuyu videonun üstüne çiziyor; otomatik takip açılınca açı hatasını gimbal komutuna çeviriyor. İki depo, ayrı bir Python gerçeklemesiyle üretilmiş aynı bayt dizisini test ediyor. 1489 karelik dizide 29,6 kare/sn, 30 Hz hedef mesajı ve 1250 mesajda kayıp 0.
+
+## Sınır
+
+Jetson'da çalıştırmadım; bütün gecikmeler RTX 2080'den. Anti-UAV kamera iç parametrelerini vermediği için açı hatası 30°'lik varsayımsal bir yatay görüş açısıyla hesaplanıyor. Girdi çözünürlüğünü 960'a çıkarmak küçük hedefe yaramadı, yanlış alarmı üçe katladı; sıradaki deneme zamansal bilgi, yani kare farkı ya da çok kareli girdiyle yeniden eğitim. Veri seti CC BY-NC 4.0 lisanslı ve depoda yok.

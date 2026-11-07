@@ -1,0 +1,52 @@
+---
+title: "Aviyonik Veri Yolu"
+tagline: "MIL-STD-1553B ve CAN için C++17 kütüphane; kararlı durumda tek bir bellek ayırması yok."
+summary: "1553B kelime biçimlerinden yedekli hatta yeniden denemeye, CAN sinyal paketlemeden ISO-TP'ye uzanan bir veri yolu kütüphanesi. Yanında FreeRTOS üzerinde 1553 telemetrisini CAN'e aktaran gerçek zamanlı bir örnek var. Her alt seviye gereksinim kodda etiketli ve en az bir testle bağlı."
+categories: [sys]
+order: 14
+period: Ekim 2026
+year: 2026
+stack: [C++17, FreeRTOS, SocketCAN, ISO-TP, GoogleTest, CMake, Docker]
+metrics:
+  - { value: '80 / 80', label: 'test; ASan ve UBSan altında da temiz' }
+  - { value: '0', label: 'kurulumdan sonraki 1000 çerçevede bellek ayırması' }
+  - { value: '105 → 25 ms', label: 'öncelik tersinmesinde kilit beklemesi, semafor → mutex' }
+repo: https://github.com/l4NGEL/aviyonik-veriyolu
+---
+
+## 1553B
+
+Komut, durum ve veri kelimeleri tek eşlikle kodlanıyor; mod kodları da var. Manchester II bi-faz kodlama kelime başına 40 yarım bit üretiyor, çözücü senkron alanını ve ihlalleri yakalıyor.
+
+Çift yedekli A/B veri yolunu ayrık zamanlı bir model olarak yazdım: benzetim saati, uzak terminal yanıt süreleri, hat boşluğu. Uzak terminalde alt adres tamponları, durum yazmacı, yayın ve RT→RT aktarımı var. Veri yolu denetleyicisi yanıtı doğruluyor, yanıt gelmezse yedek hatta yeniden deniyor, küçük ve büyük çerçeveyi zamanlıyor ve en kötü durum doluluğunu hesaplıyor.
+
+Hata enjektörü yarım bit çeviriyor, kelime düşürüyor, rastgele bit hatası basıyor. `m1553_demo`, A hattı bozulmuş bir çizelgede denetleyicinin B hattında toparlanmasını veri yolu izleyicisinin çıktısıyla gösteriyor.
+
+## CAN
+
+Sinyal paketleme DBC mantığında: Intel ve Motorola bayt sırası, işaret genişletme, ölçek, ofset ve aralık kontrolü. ISO 15765-2 (ISO-TP) ilk ve ardışık çerçeveyi, akış kontrolünü, blok boyunu, STmin'i ve zaman aşımlarını kapsıyor. Taşımadan bağımsız bir durum makinesi olarak yazıldı ve 4095 baytlık sabit bir tampon kullanıyor. Linux SocketCAN için bir RAII sarmalayıcı `poll()` ile zaman aşımlı alım ve çekirdek düzeyinde kimlik filtresi sağlıyor.
+
+## FreeRTOS örneği
+
+FreeRTOS-Kernel V11.1.0, POSIX portu üzerinde dört görev:
+
+| Görev | Öncelik | Periyot | İş |
+|---|---|---|---|
+| Veri yolu | 4 | 20 ms | Küçük çerçeveyi yürütür, veriyi bütünlük kontrolüyle kuyruğa koyar |
+| Sensör | 3 | 10 ms | INS terminalinin alt adres verisini günceller |
+| CAN | 2 | kuyruk | Telemetriyi CAN sinyallerine paketler, `vcan0`'a yazar |
+| İzleyici | 1 | 50 ms | `vcan0`'dan geri okur, süre sonunda ölçütleri değerlendirir |
+
+5 saniyelik koşuda 500 sensör ve 250 veri yolu turunda son tarih kaçmadı. 625 adet 1553 mesajında hata ve yırtık veri 0; CAN tarafında 250 çerçeve gönderildi, 250'si geri okundu.
+
+Uzak terminal nesneleri iki görev arasında paylaşıldığı için bir mutex'le korunuyor. `--oncelik` kipi aynı kilitleme senaryosunu önce ikili semaforla, sonra mutex'le koşturuyor. Yüksek öncelikli görevin beklemesi semaforla 105 ms, öncelik kalıtımlı mutex'le 25 ms.
+
+## Ölçüm
+
+Değerler Docker'da, Ubuntu 24.04 ve GCC 14 ile alındı. 80 testin 78'i GoogleTest, 2'si RTOS senaryosu. Release, Debug ve ASan+UBSan derlemeleri `-Werror` ile temiz; ASan derlemesinde FreeRTOS örneği hariç.
+
+`sifir_dinamik_bellek` testi global `operator new`'u sayıyor. Kurulumdan sonraki 1000 küçük çerçeve boyunca denetleyici, terminal, izleyici ve ISO-TP yollarında hiç ayırma yok. `src/` altında satır kapsaması yaklaşık %90; en düşük dosya `socketcan.cpp` (%71), çünkü çekirdek hata yolları testte tetiklenmiyor. `cppcheck` bulgu vermiyor.
+
+## Sınır
+
+1553 tarafı donanım değil, benzetim. Zamanlama sabitlerini standarda göre seçtim ama gerçek bir transceiver ya da kartla denemedim. FreeRTOS POSIX portunda görevler Linux iş parçacığı olduğu için ölçülen periyot sapmaları hedef donanımı temsil etmiyor. CAN yalnız `vcan0` ile denendi; CAN FD yok.

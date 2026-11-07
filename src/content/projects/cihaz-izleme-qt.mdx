@@ -1,0 +1,60 @@
+---
+title: "Cihaz İzleme"
+tagline: "Qt 6 ile UART, Modbus ve CAN'den canlı izleme; kayıt ham veri, oynatma aynı çözücüden."
+summary: "Bir motor sürücüsüyle UART, RS-485 (Modbus RTU), Modbus TCP ve CAN üzerinden konuşan, veriyi canlı çizen ve ham olarak kaydeden bir masaüstü uygulaması. Windows ve Linux'ta derlenip test edildi. Donanımsız denemek için kurgusal MSD-200 sürücüsünü taklit eden bir benzetici de yazdım."
+categories: [sys]
+order: 15
+period: Ekim 2026
+year: 2026
+stack: [C++17, Qt 6, QML, QtCharts, QSerialPort, QCanBus, Modbus, GoogleTest, Python]
+metrics:
+  - { value: '62', label: 'test; Linux ve Windows, hepsi geçiyor' }
+  - { value: '~10 000', label: 'çerçeve/sn yükte kayıpsız alım' }
+  - { value: '0 / 0', label: 'temiz hatta CRC hatası ve sıra atlaması' }
+repo: https://github.com/l4NGEL/cihaz-izleme-qt
+cover:
+  src: /images/cihaz-izleme/canli.webp
+  alt: Canlı izleme; üç hattan gelen hız, akım ve sıcaklık, kanal tablosu, Modbus komutları ve hat sağlığı
+---
+import Figure from '../../components/Figure.astro';
+
+## Hatlar
+
+Seri port, TCP ve UDP aynı `ByteTransport` arayüzünün arkasında. Bağlantı tek satırlık bir tanımla seçiliyor: `serial:COM3?baud=115200&parity=even`, `tcp:192.168.1.50:502`, `udp:14550`. TCP koparsa ya da USB-seri dönüştürücü çekilirse hat yeniden bağlanmayı deniyor. Modbus RTU bu sayede seri-ethernet dönüştürücü üzerinden TCP ile de konuşabiliyor.
+
+UART telemetrisi 500 Hz ikili bir akış: başlık, uzunluk, mesaj kimliği, sıra numarası, yük ve CRC-16/CCITT. Ayrıştırıcı bozuk bir çerçevede yalnız bir bayt kaydırıp yeniden senkronlanıyor; böylece bozuk çerçevenin içine düşen geçerli çerçeve kaybolmuyor. CRC hataları, atılan baytlar ve sıra boşluğundan kestirilen kayıplar ayrı sayılıyor.
+
+Modbus tarafında RTU ve TCP çerçevelemesini tek bir durum makinesi yürütüyor: yanıt beklenir, zaman aşımında yeniden denenir, istisna yanıtı ayrıca işaretlenir. Periyodik sorgular kuyrukta birikmiyor; hedef hız gibi kullanıcı yazmaları kuyruğun önüne alınıyor. CAN, `QCanBus` eklentileriyle çalışıyor; sinyaller Intel ve Motorola bayt sırasıyla çözülüyor.
+
+## İş parçacıkları
+
+Hatlar, çözme ve kayıt ayrı bir edinim iş parçacığında. Arayüze örnek başına sinyal gitmiyor: örnekler kilitli bir halka tampona yazılıyor, grafik onu kendi hızında, yaklaşık 30 Hz'de okuyor. Sayaçlar ve olaylar 4 Hz'de kuyruklu sinyalle geliyor.
+
+Soketler yaratıldıkları iş parçacığında kapatılmalı. Bu yüzden `stop()` önce oturumu kendi iş parçacığında kapatıyor, sonra iş parçacığının bitmesini bekliyor.
+
+Grafik, pencereyi ekran genişliği kadar zaman kovasına bölüp her kovanın min ve max değerini çiziyor. 30 saniyelik pencerede 15 000 nokta olsa da tek örneklik bir akım tepesi görünür kalıyor.
+
+## Kayıt ve oynatma
+
+<Figure n={2} src="/images/cihaz-izleme/kayit.webp" caption="Kayıt görüntüleyici: ham kayıtlar, tür süzgeci ve seçili kaydın hex dökümü" bare />
+
+Çözülmüş değerleri değil ham veriyi kaydediyorum: UART bayt parçaları gürültüleriyle birlikte, Modbus okuma blokları, CAN çerçeveleri ve olaylar. Oynatma canlı akışla aynı çözücüden geçiyor, yani sahada görülen bir CRC sorunu ofiste birebir yeniden üretilebiliyor. Program çökerse son kayıt yarım kalabilir; okuyucu bunu hata saymıyor, "yarım" diye bildiriyor.
+
+Kayıt görüntüleyici kayıtları tablo olarak gösteriyor ve CSV'ye aktarıyor; okuma ve dışa aktarma arka planda, iptal edilebilir. Ekransız `cihaz-cli` arayüzle aynı edinim yolunu kullandığı için uçtan uca testleri de o sürüyor.
+
+## Ölçüm
+
+`ctest` 62 test koşturuyor. Linux'ta Qt 6.4, GCC 13 ve `-Werror`; Windows'ta Qt 6.8.3, MSVC 19.44 ve `/W4 /WX`. Çekirdek testleri CI'da TSan ve ASan/UBSan altında da koşuyor. Rastgele tek bayt bozulmalarında yalnız bozulan çerçevenin kaybolduğu, komşularının korunduğu 2000 çerçeveyle sınanıyor.
+
+Uçtan uca testte benzetici ile `cihaz-cli` ayrı süreçler olarak gerçek soket ve pty üzerinden konuşuyor. Kayıt x10 oynatıldığında canlıyla aynı çerçeve sayısını vermek zorunda.
+
+| | Linux | Windows |
+|---|---|---|
+| Arayüz zamanlayıcısının en kötü aralığı, ~10 000 çerçeve/sn yükte (hedef 5 ms) | 13 ms | 14 ms |
+| Modbus TCP gecikmesi, son / en kötü | 6,3 / 7,6 ms | 17 / 19 ms |
+
+Windows'taki Modbus farkı benzeticiden geliyor: Python'da yazıldı, yanıttan önce kısa bir uyku yapıyor ve Windows'ta zamanlayıcı çözünürlüğü yaklaşık 15 ms.
+
+## Sınır
+
+Bütün testler benzetici ve sanal arayüzlerle (pty, `vcan0`, `virtualcan`) yapıldı. Gerçek bir RS-485 dönüştürücü, USB-CAN adaptörü ya da motor sürücüsüyle denemedim. Qt katmanı sanitizer altında koşmuyor, çünkü Qt kütüphaneleri TSan ile derlenmediği için sonuç yanıltıcı olurdu. Arayüzdeki "Sürücü etkin" anahtarı gönderilen komutu gösteriyor, cihazdan okunan durumu değil.

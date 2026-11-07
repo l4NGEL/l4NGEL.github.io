@@ -1,0 +1,47 @@
+---
+title: "Nova"
+tagline: "Alışkanlık takibi ve 3B evren; puan saklanmıyor, her seferinde kayıtlardan hesaplanıyor."
+summary: "Her alışkanlığın gökyüzünde bir galaksi, her tamamlanan günün bir yıldız olduğu bir Android uygulaması. Puanla gök cismi alınıyor, kişinin kendi koyduğu ödüller hedefleniyor, haftanın canavarı ve günün görevleri var. Ana ekran widget'ından da işaretleniyor. İnternet izni yok."
+categories: [web]
+order: 26
+period: Kasım 2026
+year: 2026
+stack: [Kotlin, Jetpack Compose, Glance, Room, AlarmManager, Canvas]
+metrics:
+  - { value: '49', label: 'birim testi, JVM üzerinde' }
+  - { value: '~1,5 MB', label: 'R8 ile küçültülmüş release APK' }
+repo: https://github.com/l4NGEL/nova
+cover:
+  src: /images/nova/kapak.webp
+  alt: Ana ekran widget'ı, Bugün ekranı, 3B evren ve Evren sekmesi
+---
+
+## Ne yapıyor
+
+Alışkanlık her gün, belirli günlerde ya da haftada X kez olabiliyor; hedef tek dokunuşla tamamlanan ya da sayılı (8 bardak su, 20 sayfa). Bugün henüz yapılmadıysa seri bozulmuyor, plan dışı günler seriyi kesmiyor, haftalık hedefte seri hafta sayıyor. Geçmiş bir gün takvimden düzeltilebiliyor.
+
+Puan, alışkanlığın zorluğuna göre tamamlama başına 5, 10 ya da 20. Yedi günlük seride ×3, haftalık hedefte ×2, gün tamamen bitince +25. Puanla gökyüzüne ay, gezegen, nebula ya da kara delik konuyor; kişi kendi gerçek ödüllerini de tanımlayıp hedefleyebiliyor. Her hafta bir "canavar" çıkıyor; canı o hafta beklenen puanın dörtte üçü, tamamlanan her alışkanlık zorluğu kadar vuruyor. Her sabah kişinin kendi alışkanlıklarından üç görev üretiliyor ve gün içinde değişmiyor.
+
+## Puan hesaplanır
+
+Puan, seviye, rozetler, görevler, canavarın canı ve yıldızlar saklanmıyor; her seferinde günlük kayıtlardan yeniden türetiliyor. Yalnız harcamalar, yani alınan ödüller ve gök cisimleri saklanıyor. Bir işareti geri alınca puanı da yıldızı da geri gidiyor: aç-kapa ile puan kasılamıyor, geçmişe dönük düzeltmeler her yerde tutarlı kalıyor. Görev ve canavar ödülleri oyunun ilk açıldığı günden sayılıyor; eski kayıtlar geriye dönük ödül yağdırmıyor.
+
+## Gökyüzü
+
+Galaksiler uzayda farklı uzaklıklarda, kendi açılarıyla eğik diskler; uzaktakiler sisleniyor. Hepsi cihazda, Canvas üzerinde perspektifle çiziliyor; görsel dosyası ya da 3B motoru yok. Sürükleyerek döndürülüyor, iki parmakla yakınlaştırılıyor.
+
+Bir yıldızın konumu yalnız alışkanlığın kimliğine ve yıldızın sırasına bağlı. Yeni yıldız eklenince eskiler kaymıyor, yeni alışkanlık eklenince var olan galaksiler taşınmıyor. Eğim ve derinlik de kimlikten geldiği için evren her açılışta aynı.
+
+## Widget ve hatırlatma
+
+Ana ekran widget'ı Jetpack Glance ile yazıldı. Bugünün alışkanlıkları sırayla listeleniyor, dokununca tamamlanıyor, sayılı hedefte +1 ekleniyor. Boyuta göre yalnız özet, liste ya da canavar da görünüyor. Uygulamada, bildirimde ya da widget'ta ne değişirse diğerleri hemen güncelleniyor; gün dönünce widget kendiliğinden yenileniyor.
+
+Hatırlatmalar alışkanlık başına bir saatte, o gün yapılmadıysa geliyor; bildirimden doğrudan "Tamamlandı" ya da "+1" denebiliyor. Cihaz yeniden başlayınca alarmlar kendiliğinden kuruluyor.
+
+## Yapı
+
+Seri, puan, görev, canavar ve gökyüzü mantığı saf Kotlin ve Android'e bağımlı değil; 49 birim testi JVM'de koşuyor. Room şeması iki göçle v3'e geldi. Her push'ta GitHub Actions testleri koşuyor ve APK'yı derliyor. Yedek tek bir JSON dosyası.
+
+## Sınır
+
+Tek kullanıcılı ve tek cihazlık bir uygulama; cihazlar arası senkron yok. Testler mantık katmanını kapsıyor, arayüz ve widget testi yok. Oyun kurallarının, yani puan katsayılarının ve canavar canının alışkanlık sürdürmeye etkisini ölçmedim.

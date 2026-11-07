@@ -1,0 +1,44 @@
+---
+title: "Kanat Kesiti FEM"
+tagline: "Türbin kanadı kesitinde sıcaklık ve ısıl gerilme; yakınsama mertebesi teoriyle uyuyor."
+summary: "Soğutma kanallı bir kanat kesitinde kararlı ısı iletimini ve bundan doğan ısıl gerilmeyi çözen, sıfırdan yazılmış bir sonlu eleman kodu. Her parça kapalı çözüme karşı denendi. Geometri örnek; katsayılar akıştan hesaplanmadı."
+categories: [sys]
+order: 13
+period: Ekim 2026
+year: 2026
+stack: [C++17, Eigen, Gmsh, HDF5]
+metrics:
+  - { value: '2,00', label: 'ısı iletiminde gözlenen L² yakınsama mertebesi' }
+  - { value: '2,997', label: 'delikli plakada gerilme yığılması; analitik değer 3' }
+repo: https://github.com/l4NGEL/blade-fem
+---
+
+## Neden bu formülasyon
+
+Çözücü Eigen'in seyrek matrislerinin üstüne sıfırdan yazıldı: eleman rutinleri, birleştirme, sınır koşulları, Gmsh okuyucu, HDF5/XDMF çıktı. Isı, kararlı iletim. Elastisite, sabit şekil değiştirme üçgeni; düzlem gerilme, düzlem şekil değiştirme veya genelleştirilmiş düzlem şekil değiştirme.
+
+Düzlem gerilme eksenel gerilmeyi sıfırlar ve kanatta asıl olan σzz'yi kaçırır. Düzlem şekil değiştirme eksenel uzamayı yasaklar ve ortalama sıcaklık artışından kabaca −2,5 GPa üretir. Genelleştirilmiş düzlem şekil değiştirme kesitin serbestçe uzamasına ve eğilmesine izin verir: εzz = e₀ + κₓx + κᵧy. Üç ek bilinmeyen yer değiştirmelerle birlikte çözülür; net eksenel kuvvet ve iki eğilme momenti sıfırlanır. Kanat ucunda olan budur.
+
+## Doğrulama
+
+`bladefem-verify` ağı dört problemde inceltir ve gözlenen mertebeyi raporlar. h, en uzun eleman kenarı.
+
+| Problem | Büyüklük | Gözlenen | Beklenen |
+|---|---|---|---|
+| Üretilmiş T = sin πx sin πy | L² / H¹ hata | 2,00 / 1,00 | 2 / 1 |
+| Timoshenko konsol | yer değiştirme, bağıl L² | 2,00 | 2 |
+| Delikli plaka, Kirsch | gerilme, bağıl L² | 1,03 | 1 |
+| Delikli plaka | gerilme yığılması | 2,997 | 3 |
+| Isıtılmış uzun silindir, iletim + GPS | dört gerilme, bağıl L² | 1,00 | 1 |
+
+Son satır tüm kanat hattını, Timoshenko ve Goodier'in serbest uçlu silindir çözümüne karşı koşar: önce iletim, sonra sıcaklığın sürdüğü genelleştirilmiş düzlem şekil değiştirme.
+
+Catch2'de 30 senaryo yakınsama değil, tam eşitlik arar. Bozuk ağda yama testi. Tek eksenli çekme. Serbest ve tam tutulu ısıl genleşme. Sınırlar arasında yuvarlama payında ısı dengesi. Statik belirli mesnetleri yüksüz bırakan, kendi içinde dengeli ısıl yük. Kötü koşulmuş problem ve bozuk girdinin reddi.
+
+## Örnek kesit
+
+Geometri 50 mm veter, kalın kambur, %22 kalınlık, kamber çizgisinde üç soğutma kanalı. Doğrusal üçgen ağ. Sınırlar varsayılmış film katsayıları: hücum kenarı h = 3000, basınç yüzü 1800, emme yüzü 1200, kanallar 2000 W/m²K. Sıcak gaz 1600 K, soğutma havası 800 K. Malzeme bir nikel süperalaşım mertebesinde: k = 22 W/mK, E = 160 GPa, ν = 0,30, α = 15·10⁻⁶ 1/K.
+
+Rijit hareket, kamber çizgisinde bir pim ve bir kayıcıyla alınır. Isıl yük kendi içinde dengeli olduğu için mesnet tepkileri yaklaşık 10⁻⁶ N/m çıkar.
+
+Bu girdiler örnek. Film katsayıları akıştan hesaplanmadı, kesit gerçek bir motor kanadı değil. Amaç bir tasarım sayısı değil, doğrulanmış bir akış.

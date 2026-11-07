@@ -1,0 +1,61 @@
+---
+title: "KYC Ajanı"
+tagline: "Kurumsal müşteri kontrolü: eksik belge insan kuyruğuna düşer, sessiz onay yok."
+summary: "Sentetik belgelerden tarafı çözen, dolaylı ortaklığı ve gerçek faydalanıcıyı hesaplayan, yaptırım listesine bakan ve dosyayı onay, ek belge veya analiste ayıran bir akış. Hedef, çıkarma hatasının sessiz onaya değil ek insan işine dönüşmesiydi. Bu, ölçtüğüm her düzende tuttu."
+categories: [ai, sec]
+order: 17
+period: Ekim 2026
+year: 2026
+stack: [Python, LangGraph, scikit-learn, NetworkX, Qwen2.5]
+metrics:
+  - { value: '0', label: 'insan gereken dosyada otomatik onay, iki dünyada da' }
+  - { value: '%59', label: 'görülmemiş düzende rota doğruluğu; geliştirmede %88' }
+---
+
+## Akış
+
+Belge sınıflanır ve alanlar çıkar. Kurallar yetmezse yerel bir model (Qwen2.5-3B) dener; döndürdüğü her değer kaynak metindeki bir aralığa oturmak zorunda, oturmayan atılır. Model atlayabilir, uyduramaz.
+
+Sonra sıra şöyle:
+
+1. Eksikler `policy.yaml`'dan gelir. Yabancı tüzel ortak, kendi sicil özetini gerektirir. Vergi numarası belgeler arasında çapraz kontrol edilir.
+2. Taraf çözümü: kimlik kuralı, sonra engelleme, sonra kalibre edilmiş üç yollu karar (bağla / insan / bağlama). Sağlama toplamı tutan ve tek kayda uyan TCKN veya VKN, modelden önce deterministik bağlanır.
+3. Ortaklık grafiği. Efektif pay `E = A(I − A)⁻¹` ile, çapraz ortaklık ve döngü dahil, yol çarpımlarının toplamı. Gerçek faydalanıcı, %25 ve üstü gerçek kişi. Aynı hesabı bağımsız bir sabit nokta gerçeklemesiyle karşılaştırdım.
+4. Beyan, sicille kıyaslanır: gizlenen faydalanıcı, faydalanıcı olmayan beyan, toleransın dışındaki pay.
+5. Yaptırım taraması grafikteki her kişi ve şirkete, artı imza yetkililerine bakar. Güçlü eşleşme otomatik temizlenmez.
+6. Rota politika verisidir: onay, ek belge veya analist. Analist kararı LangGraph `interrupt` ile durur ve analist kimliğiyle loglanır.
+
+Kişisel veri logdan önce maskelenir. Denetim kaydı SHA-256 ile zincirlenir; bir satırı değiştirmek veya silmek, o noktadan sonrasının doğrulamasını bozar.
+
+## İki dünya
+
+Veri sentetik, tohumdan üretilir. Gerçek şirket veya kişi yok. Geliştirme dünyasında her şey ayarlandı. Test dünyasında başka varlıklar, başka yaptırım listesi ve kimsenin bakmadığı bir belge düzeni (v4) var. Mutlak sayılar bir bankanın dosyası değil. İşe yarayan sinyal, görülen ile görülmeyen arasındaki fark.
+
+| | Geliştirme | Test (v4) |
+|---|---|---|
+| İnsan gereken dosyada otomatik onay | 0 / 174 | 0 / 183 |
+| Rota doğruluğu | %88 | %59 |
+| Yaptırım tarafının yüzeye çıkması | 38 / 38 | 38 / 38 |
+| Kuralların yazıldığı düzende alan | %100 | %100 |
+| Görülmemiş v3, kural → kural + model | %5,6 → %97,4 | %6,0 → %97,2 |
+| Kimsenin bakmadığı v4 | — | %4,4 → %55,2 |
+
+Test dünyasında insan gereken 183 dosyanın 175'i analiste, 8'i eksik belgeye gitti. Hiçbiri onaylanmadı. Bedeli fazla yükseltme: temiz 246 dosyanın 69'u incelemeye gitti.
+
+v4'te model pay defterini, oda kaydını ve imza listesini faydalanıcı beyanı sandı. Alanların çoğu doğruydu; etiket yanlış olduğu için yanlış yuvaya gitti. v4 üzerinde hiçbir şey ayarlamadım.
+
+## Yol üstünde çıkanlar
+
+Yaptırım taramasında eşik sorun gibi duran şey bir skor hatasıydı. Soyadı ödüllendiren Jaro–Winkler, "Ömer Karataş"ı listelenmiş "Özlem Karataş"a 0,93 ile bağlıyordu. Token hizası, şirket adında seyrek sözcüklere ağırlık ve farklı tüzel biçime ceza, aynı hatırlamada uyarıyı 1.173'ten 114'e indirdi. Eşik ondan sonra oynatılmadı. Ekilen her isabet 0,80 eşiğinin üstünde, 1,02 ve üzerinde kaldı; bu deneme hatırlamanın nerede düştüğünü göstermez.
+
+Öğrenilmiş eşleştirici, eğitildiği ad varyasyonlarında kuralları geçiyor. Görülmeyen varyasyonda, kesin vergi numarası taşıyan 94 şirket anışından 44'ünü bağlayamadı; bazısının skoru 0,0002'ydi. Deterministik kimlik kuralı, görülmeyen şirket otomatik bağlamasını %53–62'ye çıkardı, kesinlik %98,8–98,9.
+
+İlk çalıştırmada aday listesi Python'un süreç başına dizgi hash'ine bağlıydı. Sıra açık yazılınca iki farklı `PYTHONHASHSEED` bayt bayt aynı sonucu veriyor.
+
+İlk "kaçan yükseltme"nin altısı yanlış etiketti. Üreteç, %100 hisseyi %99 ilan edip bunu 5 puanlık toleransın içine sıkıştırmıştı. Boru hattı doğruydu. Üreteç artık en az 10 puanlık fark bırakıyor.
+
+Modelin MERSIS numarasını yazmadığına dair ilk tanım yanlıştı. Ham çıktı, anahtarı atlayıp virgülü unuttuğunu gösterdi. JSON onarımı ve bir ipucu ikisini de kapattı.
+
+LangGraph kesintiden dönünce düğümü baştan çalıştırır. Yükseltme logu iki kez yazılıyordu; yükseltme ayrı düğüme alındı, test bunun bir kez göründüğünü doğrular.
+
+Yaptırım satırındaki 38/38, test dünyasındaki hata analizinden çıkan bir düzeltmenin sonrası. Öncesi 34/38. Düzeltme test dünyasında bulunduğu için "sonrası" temiz bir tutulmuş sonuç değil.

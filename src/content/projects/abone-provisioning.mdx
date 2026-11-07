@@ -1,0 +1,34 @@
+---
+title: "Abone Provisioning"
+tagline: "Hat aktivasyonu ve tarife değişikliği; sipariş ile kuyruk mesajı tek XA işleminde."
+summary: "Mobil hat aktivasyonu ve tarife değişikliğini REST, SOAP ve bir JSF ekranından alan bir servis. Ücret ve kota Oracle'daki PL/SQL paketinde. Sipariş satırı ile JMS mesajı aynı dağıtık işlemde commit oluyor; aynı istemci referansı yeni sipariş açmıyor."
+categories: [web, sys]
+order: 15
+period: Ekim 2026
+year: 2026
+repo: "https://github.com/l4NGEL/abone-provisioning"
+stack: [Java 17, Spring Boot, Oracle, PL/SQL, JMS, Atomikos, JSF]
+metrics:
+  - { value: '19,5/sn', label: '20 sanal kullanıcıda tamamlanan sipariş, 0 hata' }
+  - { value: '27', label: 'Testcontainers ile JUnit' }
+---
+
+## Neden XA
+
+Hibernate `INSERT`'i commit anına kadar erteliyor. Aynı istemci referansı eşzamanlı gelince tekillik ihlali, mesaj kuyruğa gittikten sonra ortaya çıkabiliyor. XA, kaybeden isteklerin mesajını da geri alıyor.
+
+Bunu 8 eşzamanlı istekle sınadım: veritabanında tek satır, işlenen tek sipariş, sahipsiz mesaj sıfır. Aynı testi XA'sız bağlantı fabrikasıyla koşunca 8 sahipsiz mesaj oluştu ve kazanan sipariş `ALINDI`'da takılı kaldı. Yani XA iki hatayı kapatıyor: hayalet mesaj ve commit'ten önce okunan mesaj.
+
+2PC'nin commit fazında dar bir pencere kalıyor. Karşılığı henüz görünmeyen sipariş hemen sahipsiz sayılmıyor; mesaj beşinci teslime kadar yeniden deneniyor. Prepare ile commit arasında süreci öldürüp Atomikos günlüğünden toparlamayı elle denemedim.
+
+## Ücret
+
+Aylık ücret dönem başında peşin. İlk ay aktivasyonda kıst. Tarife değişince eski tarifenin kalan günü iade, yenisinin kalan günü tahakkuk ediyor. Hat satırı `SELECT ... FOR UPDATE` ile kilitleniyor; asıl karar Java'daki ön kontrolde değil, kilit altındaki PL/SQL'de.
+
+PL/SQL'i JPA ile değil `SimpleJdbcCall` ile çağırıyorum. `EntityManager` üzerinden gelen bir SQL hatası JTA işlemini rollback-only işaretliyordu ve siparişi `REDDEDILDI` yazmak mümkün olmuyordu.
+
+## Yük
+
+Tek dizüstüde, Oracle, Artemis, uygulama ve k6 aynı makinede. 20 sanal kullanıcıda 1557 siparişin hepsi tamamlandı, verim 19,5 sipariş/saniye, HTTP hata ve sahipsiz mesaj sıfır. 40 sanal kullanıcıda eşikler aşıldı ve verim 16,7'ye düştü; sistem bu ortamda yaklaşık 20 sipariş/saniye civarında doyuyor. 10 saniyeyi aşan 3 sipariş de sonra bitti. Darboğazın 2PC disk senkronu olduğunu tahmin ediyorum; profil çıkarıp doğrulamadım.
+
+Jenkinsfile'ı gerçek bir Jenkins'te çalıştırmadım. Kubernetes bildirimleri kubeconform ile geçiyor; bir kümeye dağıtılmadı. Veriler sentetik.

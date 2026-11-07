@@ -13,19 +13,25 @@ const areaCount = (area: (typeof AREAS)[number]) => CERTIFICATES.filter((c) => c
   description="Beyza Nur Kılıç'ın sertifikaları ve doğrulama bağlantıları."
   image="/images/sertifikalar/cyberops.webp"
 >
-  <main class="wrap">
+  <main class="wrap certs-page">
     <header class="p-top">
       <p class="crumb">Özgeçmiş</p>
-      <h1 class="p-title">Sertifikalar</h1>
-      <div class="p-lead">
+      <div class="cert-intro">
+        <h1 class="p-title">Sertifikalar</h1>
+        <dl class="stat-row">
+          <div>
+            <dd>{CERTIFICATES.length}</dd>
+            <dt>Toplam<span>sertifika</span></dt>
+          </div>
+          <div>
+            <dd>{verifiable}</dd>
+            <dt>Doğrulama<span>kurum sitesinde</span></dt>
+          </div>
+        </dl>
         <p class="lead">
           Ağ ve siber güvenlik, yazılım, yapay zekâ, proje yönetimi ve dil alanlarında aldığım eğitimler. Doğrulama bağlantısı olan
           belgeler, veren kurumun kendi sitesinde kontrol edilebilir.
         </p>
-        <dl class="facts">
-          <dt>Toplam</dt><dd>{CERTIFICATES.length} sertifika</dd>
-          <dt>Çevrimiçi doğrulama</dt><dd>{verifiable} belge</dd>
-        </dl>
       </div>
     </header>
 
@@ -37,8 +43,8 @@ const areaCount = (area: (typeof AREAS)[number]) => CERTIFICATES.filter((c) => c
     </div>
 
     <div class="cert-group" data-cert-group>
-      <div class="shead"><h2>Belgeler</h2><span class="label" data-cert-count>{docs.length}</span></div>
-      <div class="certs">
+      <div class="shead" id="belgeler"><h2>Belgeler</h2><span class="label" data-cert-count>{docs.length}</span></div>
+      <div class="certs" data-certs>
       {docs.map((c) => (
         <article class="cert" data-area={c.area}>
           {c.parts && c.slug ? (
@@ -66,6 +72,7 @@ const areaCount = (area: (typeof AREAS)[number]) => CERTIFICATES.filter((c) => c
         </article>
       ))}
       </div>
+      <nav class="pager" data-pager hidden aria-label="Belge sayfaları"></nav>
     </div>
 
     {others.length > 0 && (
@@ -87,39 +94,126 @@ const areaCount = (area: (typeof AREAS)[number]) => CERTIFICATES.filter((c) => c
 </Base>
 
 <script>
+  const PAGE = 8;
   const buttons = [...document.querySelectorAll<HTMLButtonElement>('#cert-filters button')];
-  const items = [...document.querySelectorAll<HTMLElement>('[data-area]')];
+  const certs = [...document.querySelectorAll<HTMLElement>('.certs .cert')];
+  const extras = [...document.querySelectorAll<HTMLElement>('.cert-list [data-area]')];
   const groups = [...document.querySelectorAll<HTMLElement>('[data-cert-group]')];
   const empty = document.querySelector<HTMLElement>('[data-cert-empty]');
+  const countEl = document.querySelector<HTMLElement>('[data-cert-count]');
+  const pager = document.querySelector<HTMLElement>('[data-pager]');
+  const grid = document.querySelector<HTMLElement>('[data-certs]');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let area = 'all';
+  let page = 1;
+  let generation = 0;
 
-  function apply(area: string) {
+  function matching() {
+    return certs.filter((item) => area === 'all' || item.dataset.area === area);
+  }
+
+  function tagTransitions(on: boolean) {
+    certs.forEach((item, i) => item.style.setProperty('view-transition-name', on ? `cert-${i}` : ''));
+    countEl?.style.setProperty('view-transition-name', on ? 'cert-count' : '');
+  }
+
+  function drawPager(total: number, pages: number) {
+    if (!pager) return;
+    pager.hidden = pages <= 1;
+    if (pages <= 1) {
+      pager.innerHTML = '';
+      return;
+    }
+    const start = (page - 1) * PAGE + 1;
+    const end = Math.min(page * PAGE, total);
+    const nums = Array.from({ length: pages }, (_, i) => {
+      const n = i + 1;
+      const current = n === page ? ' aria-current="page"' : '';
+      return `<button type="button" data-goto="${n}"${current}>${n}</button>`;
+    }).join('');
+    pager.innerHTML = `
+      <button type="button" data-goto="prev"${page === 1 ? ' disabled' : ''}>Önceki</button>
+      <div class="pager-pages">${nums}</div>
+      <button type="button" data-goto="next"${page === pages ? ' disabled' : ''}>Sonraki</button>
+      <p class="pager-range">${start}–${end} / ${total}</p>`;
+  }
+
+  function paint() {
     buttons.forEach((button) => button.setAttribute('aria-pressed', String((button.dataset.f ?? 'all') === area)));
-    for (const item of items) {
-      const show = area === 'all' || item.dataset.area === area;
+    const shown = matching();
+    const pages = Math.max(1, Math.ceil(shown.length / PAGE));
+    page = Math.min(Math.max(1, page), pages);
+    const from = (page - 1) * PAGE;
+    for (const item of certs) {
+      const index = shown.indexOf(item);
+      const show = index >= from && index < from + PAGE;
       item.hidden = !show;
       if (show) item.classList.add('in');
     }
+    for (const item of extras) item.hidden = !(area === 'all' || item.dataset.area === area);
     for (const group of groups) {
-      const visible = group.querySelectorAll<HTMLElement>('[data-area]:not([hidden])');
-      group.hidden = visible.length === 0;
-      const count = group.querySelector<HTMLElement>('[data-cert-count]');
-      if (count) count.textContent = String(visible.length);
+      const has = group.querySelector('[data-area]:not([hidden])');
+      group.hidden = !has;
     }
-    if (empty) empty.hidden = items.some((item) => !item.hidden);
+    if (countEl) countEl.textContent = String(shown.length);
+    if (empty) empty.hidden = shown.length > 0 || extras.some((item) => !item.hidden);
+    drawPager(shown.length, pages);
+    grid?.classList.add('paged');
     const url = new URL(location.href);
     if (area === 'all') url.searchParams.delete('alan');
     else url.searchParams.set('alan', area);
+    if (page === 1) url.searchParams.delete('sayfa');
+    else url.searchParams.set('sayfa', String(page));
     history.replaceState(null, '', url);
   }
 
-  for (const button of buttons) {
-    button.addEventListener('click', () => apply(button.dataset.f ?? 'all'));
+  function apply(animate = true) {
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } };
+    if (!(animate && !reduce && doc.startViewTransition)) {
+      paint();
+      return;
+    }
+    const id = ++generation;
+    tagTransitions(true);
+    document.documentElement.classList.add('vt-filter');
+    const transition = doc.startViewTransition(() => paint());
+    transition.finished.finally(() => {
+      if (id !== generation) return;
+      tagTransitions(false);
+      document.documentElement.classList.remove('vt-filter');
+    });
   }
 
-  const wanted = new URLSearchParams(location.search).get('alan');
-  if (wanted && buttons.some((button) => button.dataset.f === wanted)) {
-    apply(wanted);
-    if (!reduce) document.getElementById('cert-filters')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  function go(next: number) {
+    page = next;
+    apply(true);
+    document.getElementById('belgeler')?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+  }
+
+  for (const button of buttons) {
+    button.addEventListener('click', () => {
+      area = button.dataset.f ?? 'all';
+      page = 1;
+      apply(true);
+    });
+  }
+
+  pager?.addEventListener('click', (event) => {
+    const button = (event.target as HTMLElement).closest('button');
+    if (!button || button.hasAttribute('disabled')) return;
+    const goto = button.dataset.goto;
+    if (goto === 'prev') go(page - 1);
+    else if (goto === 'next') go(page + 1);
+    else if (goto && Number(goto) !== page) go(Number(goto));
+  });
+
+  const params = new URLSearchParams(location.search);
+  const wanted = params.get('alan');
+  const wantedPage = Number(params.get('sayfa'));
+  if (wanted && buttons.some((button) => button.dataset.f === wanted)) area = wanted;
+  if (Number.isFinite(wantedPage) && wantedPage > 1) page = Math.floor(wantedPage);
+  apply(false);
+  if (wanted && area === wanted && !reduce) {
+    document.getElementById('cert-filters')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
 </script>

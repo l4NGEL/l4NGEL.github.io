@@ -16,6 +16,8 @@ function reveal(el: Element) {
   el.querySelectorAll<HTMLElement>('.metric b').forEach(countUp);
 }
 
+document.querySelectorAll<HTMLElement>('.cert-intro .stat-row dd').forEach(countUp);
+
 if (!reduce && 'IntersectionObserver' in window) {
   const io = new IntersectionObserver(
     (entries) => {

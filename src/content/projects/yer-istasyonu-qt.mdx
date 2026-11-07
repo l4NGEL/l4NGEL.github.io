@@ -1,0 +1,45 @@
+---
+title: "Yer İstasyonu"
+tagline: "Qt 6 ile MAVLink yer kontrolü: görev yükleme, video ve faydalı yük, SITL ile sınanmış."
+summary: "Linux için Qt 6 / QML ve C++17 ile yazılmış küçük bir yer kontrol istasyonu. Telemetriyi ayrı iş parçacığında çözer, haritadan görev yükler, video akışını gecikme biriktirmeden gösterir. Gerçek araç olmadan, aynı depodaki SITL ve sahte kamera ile denedim."
+categories: [sys]
+featured: true
+order: 3
+period: Ekim 2026
+year: 2026
+stack: [C++17, Qt 6, QML, MAVLink, GStreamer, CMake]
+metrics:
+  - { value: '80', label: 'test; sanitizer altında da temiz' }
+  - { value: '~7 ms', label: 'görüntüden hedef mesajına gecikme, p50' }
+  - { value: '0', label: '1250 hedef mesajında kayıp ya da red' }
+repo: https://github.com/l4NGEL/yer-istasyonu-qt
+cover:
+  src: /images/yer-istasyonu/ucus.webp
+  alt: Uçuş sekmesi; harita, canlı video, yapay ufuk ve olay günlüğü
+---
+
+## Ne yapıyor
+
+MAVLink v1/v2 UDP üzerinden telemetri alır. Soket ve ayrıştırıcı ayrı bir `QThread`'de çalışır; çözülen çerçeveler kuyruklu sinyalle ana iş parçacığına geçer. Görev, haritaya tıklanarak kurulur ve QGroundControl `.plan` biçiminin `SimpleItem` alt kümesiyle kaydedilir. Yükleme `MISSION_COUNT` → `MISSION_REQUEST_INT` → `MISSION_ITEM_INT` → `MISSION_ACK` ile gider, zaman aşımında yeniden gönderir.
+
+Video, GStreamer ile ayrı iş parçacığında RTP/H.264 veya RTSP olarak alınır. Arayüz yetişemezse eski kare atılır; kuyruk birikmez. Gimbal ve kamera komutları kaydırıcı sürüklenirken 10 Hz'e birleştirilir.
+
+Protokol durum makineleri zamanı dışarıdan alır ve soket görmez. Kayıp, zaman aşımı ve yeniden deneme gerçek saat beklemeden test edilir. Kullanılan MAVLink alt kümesi elle yazıldı; pymavlink 2.4.49 ile üretilen çerçevelerle bayt bayt karşılaştırılıyor.
+
+## Hedef takibi
+
+Termal videoda İHA arayan [iha-takip](https://github.com/l4NGEL/iha-takip) her kare için UDP üzerinden 54 baytlık, CRC'li bir hedef mesajı yollar: takip numarası, azimut ve elevasyon hatası, skor, hat gecikmesi ve hedef kutusu. İşlenen kare aynı anda normal video girdisi olarak gelir. İki depo, ayrı bir Python gerçeklemesiyle üretilmiş aynı bayt dizisini test eder; çözücü gönderenin koduna bağlı değil.
+
+Otomatik takip iki kipte çalışır. Kamera gimbalin üstündeyse kapalı döngü: yeni açı, gimbal açısına hatanın yarısı eklenerek bulunur. Kamera sabitse, istenen mutlak yön kamera bakışından hesaplanır ve gimbal oraya yaklaştırılır. İkisinde de adım en fazla 5°; skoru 0,3'ün altındaki ya da sırası bozulmuş mesaj gimbali sürmez.
+
+RTX 2080'de iha-takip, Docker'da SITL ve yer istasyonuyla 1489 karelik dizide video 30 fps, hedef mesajı 30 Hz geldi. Görüntüden mesaja gecikme p50 ~7 ms, 1250 mesajda kayıp ve red 0. Kayıtlı video kullanıldığı için kamera gerçekte dönmüyor; demo sabit kamera kipinde.
+
+## Ölçüm
+
+`ctest` 80 test çalıştırıyor: 74 çekirdek testi ve 6 QtTest programı. Ubuntu 24.04 üzerinde `-Werror` ile geçiyorlar. İş parçacığı testleri beş kez arka arkaya koşuldu, dalgalanma çıkmadı. Çekirdek testleri ThreadSanitizer ve AddressSanitizer altında da temiz.
+
+Uçtan uca test, ayrı süreçteki SITL'e gerçek UDP ile görev yüklüyor; her iki yönde %20 paket kaybıyla 15 öğelik görev de toparlanıyor.
+
+## Sınır
+
+Harita çevrimdışı bir metre ızgarası. Uydu karosu yok; birkaç kilometrelik görev alanında yeter, büyük alanda değil. Uçuş kipi adları yalnız bu depodaki SITL için çözülüyor; ArduPilot veya PX4'te kip numarası olarak görünür. `.plan` dosyasını QGroundControl ile karşılıklı açmadım. SITL uçuş modeli kinematik: rüzgâr, dinamik ve sensör gürültüsü yok.

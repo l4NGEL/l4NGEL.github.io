@@ -1,0 +1,75 @@
+---
+title: "Belge RAG"
+tagline: ".NET üzerinde kaynak gösteren soru-cevap; en büyük kazanç yeniden sıralamadan geldi."
+summary: "Belgeler kuyruktan bir worker'a gider, PostgreSQL ve pgvector'a yazılır. Soru hibrit arama ve sözcüksel yeniden sıralamayla cevaplanır, yanıt token token akar. Varsayılan kurulum modelsiz çalışır; ölçümler çalışan sisteme HTTP ile yapıldı."
+categories: [ai, web]
+order: 8
+period: Ekim 2026
+year: 2026
+repo: "https://github.com/l4NGEL/belge-rag"
+stack: [C#, ASP.NET Core, PostgreSQL, pgvector, RabbitMQ, React]
+metrics:
+  - { value: '%81', label: 'hibrit arama + rerank, belge Hit@1' }
+  - { value: '35/48', label: 'gemma3 yanıtı, elle doğru sayılan' }
+---
+
+## Bir sorunun yolu
+
+`POST /api/chat/stream`, JWT, kullanıcı başına dakikada 30 istek. Oturumun son 10 turu MongoDB'den okunur. Retriever, takip sorusunu bağımsız bir sorguya çevirir; extractive modda kısa sorulara önceki soruyu ekleyen bir sezgi yeter. Arama bir Semantic Kernel eklentisinden geçer.
+
+Hibrit arama: sorgu gömüsü önce Redis'te aranır, pgvector HNSW kosinüs ile `tsvector` tam metin paralel koşar, iki sıra RRF (k = 60) ile birleşir, ilk 20 aday sözcüksel reranker'dan geçer. Token bütçesi pencereden yanıt payını, güvenlik payını, sistem talimatını ve soruyu düşer. Kalanın en fazla dörtte biri geçmişe, sonrası kaynaklara gider. Sığmayan kaynak en az 48 token sığıyorsa kesilir.
+
+Cevaplayıcı akıtır. Doğrulayıcı her cümlenin kaynakta sözcüksel dayanağına ve atıf numarasına bakar. Tur ve denetim kaydı MongoDB'ye yazılır; bu yazım düşerse akış bozulmaz, uyarı loglanır.
+
+Kuyruk yalnız belge kimliğini taşır. API önce satırı yazar, sonra yayınlar. Mesaj kalıcı, yayıncı onayı açık, prefetch 8. Üç denemeden sonra belge `failed` olur ve mesaj ölü mektuba gider. İndeks tek işlemde sil-ve-yaz; yeniden teslim parçayı çoğaltmaz.
+
+Türkçe için PostgreSQL `simple` yapılandırması "İ/ı"yı katlamaz. `search_text` C# tarafında katlanarak yazılır, sorgu da aynı katlamayla kurulur. Terimler 6 karakterlik kök önekine iner. Kullanıcı girdisi `to_tsquery`'ye yalnız harf ve rakam öneki olarak ulaşır.
+
+## Arama
+
+Korpus, kendi açık depolarımın 12 README'si: 175 KB, 327 parça. 48 soruyu belgeleri okuduktan sonra ben yazdım, belge başına 4. Her birinin yanında belgede birebir geçen bir kanıt ifadesi var. 11 soru çapraz dil. Kelime örtüşmesi gerçek kullanıcı sorusundan yüksek; tam metin aramasını kayırır. Sayılar bu korpusa ait. Makine: i9-9880H, 32 GB, RTX 2080.
+
+nomic-embed-text, görev önekleriyle:
+
+| Yapılandırma | Belge Hit@1 | Belge Hit@5 | Kanıt@5 |
+|---|---|---|---|
+| Tam metin | %70,8 | %87,5 | %75,0 |
+| Vektör | %72,9 | %81,2 | %70,8 |
+| Hibrit | %75,0 | %89,6 | %75,0 |
+| Hibrit + rerank | %81,2 | %93,8 | %81,2 |
+
+Aynı tabloda modelsiz karakter n-gram hashing, hibrit + rerank satırında Hit@1 yine %81,2, Kanıt@5 ise %77,1. nomic tek başına hashing'den iyi değil. En büyük kazanç, model gerektirmeyen sözcüksel reranker'dan: Hit@1 yaklaşık 10 puan artıyor. Anlamsal fark, Hit@5'te görünüyor: nomic %93,8, hashing %87,5.
+
+Öneksiz nomic'de vektör Kanıt@5 %66,7, Hit@5 %79,2 idi. Önek uzayı değiştirdiği için model kimliğine `+prefix` eklendi; eski vektörlerle karışmıyor.
+
+Çapraz dil zayıf. En iyi satırda 11 soruda Kanıt@5 %45,5. Bulunanlar da çoğunlukla bir sayı veya tanımlayıcı eşleştiği için bulunuyor.
+
+İstemci tarafı arama gecikmesi, p50: tam metin 4,3 ms, hibrit + rerank 11,0 ms. Vektör satırında 28,9 ms; bunun çoğu Ollama'ya giden gömü. Aynı sorgu Redis'ten gelince hibrit 5,6 ms.
+
+## Yanıt ve doğrulayıcı
+
+48 soru iki kez soruldu. İkincisi önbellek. gemma3:4b, GPU normalken, ilk token p50/p95 864/1197 ms, toplam 1437/2890 ms. Modelsiz extractive modda ilk token 14/18 ms. Önbellekten ilk token yaklaşık 10 ms. GPU ısıl sınıra girince gemma3 ilk token p50'si 6,3 saniyeye çıktı; servisin kendi payı iki durumda da 50–100 ms.
+
+48 gemma yanıtını tek tek okuyup etiketledim. Bağımsız bir değerlendirme değil.
+
+| | Sayı |
+|---|---|
+| Doğru | 35 / 48 |
+| Kanıt ilk 5 parçadaysa doğru | 35 / 39 |
+| Kanıt ilk 5'te değilse doğru | 0 / 9 |
+
+Hataların 9'u aramadan, 4'ü üretimden. Kanıt gelmeyince model ya "bilgi yok" diyor ya da ilgisiz belgeden kuruyor. İyileştirmenin yeri arama.
+
+Sözcüksel doğrulayıcı 13 hatanın 5'ini işaretledi, 35 doğru yanıtın 5'ine de yanlış alarm verdi. Çoğu, İngilizce kaynağa Türkçe doğru yanıt ve "%15,1" ile "%15.1" gibi biçim farkı. Güvenlik ağı değil, zayıf bir sinyal. Ölçerken iki hata çıktı: `[1, 2]` atıfları tanınmıyordu, ret cümleleri "dayanıyor" sayılıyordu. İkisi de düzeltildi.
+
+Bir takip sorusunda yanıt yanlıştı; rozet yine de geçti, çünkü sözcükler kaynakta geçiyordu. Sözcüksel dayanak, doğru cevap demek değil. Extractive modda yanıt kaynak cümlenin kendisi olduğu için doğrulayıcı tanım gereği hep "dayanıyor" der. Bu modun değeri cevap kalitesi değil: kuyruk, arama, SSE, önbellek ve denetimi modelsiz koşturması. Kanıt ifadesi yanıtta 26/48.
+
+Önbellek yalnız doğrulayıcının dayandığını söylediği yanıtları tutar. gemma'da 8, extractive'de 13 "yanıt yok" her seferinde yeniden üretilir. Redis düşünce iki önbellek de atlanır.
+
+12 belgenin API'ye yazılması 619 ms. Parçalama ve gömüyle birlikte hashing 1,2 s, bellekteki nomic 5,6 s. Model soğukken ilk iki belgenin gömüsü 53 s sürdü; Ollama modeli diskten yüklüyordu.
+
+## Test
+
+64 xUnit birim testi, yaklaşık 33 saniye; sürenin çoğu tokenizer. 16 integration testi, Testcontainers ile pgvector, Redis, MongoDB ve RabbitMQ, yaklaşık 22 saniye. Kapsadıkları: yükle, kuyrukla, ara, SSE ile akıt; 401, 403, 400; zehirli mesajın ölü mektuba düşmesi; `to_tsquery` ve SQL enjeksiyonu denemesi; yeniden indeksin parçayı çoğaltmaması; gömü boyutu uyuşmazlığında açık hata; Redis isabeti; oturumun kullanıcıya göre yalıtımı. Birleşik satır kapsamı %88. Vitest'te 3 SSE ayrıştırıcı testi.
+
+Yaşam döngüsü açılışta `ValidateOnBuild` ve `ValidateScopes` ile denetlenir. Kernel transient: retriever eklenti yükler, kernel paylaşılırsa eklenti istekler arasında sızardı. Worker her mesaj için yeni bir kapsam açar.

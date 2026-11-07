@@ -1,10 +1,10 @@
 ---
 title: "Stereo 3D MOT"
 tagline: "C++17 ile sıfırdan stereo derinlik, 3B çoklu hedef takibi ve görsel odometri."
-summary: "İki kameradan gelen görüntüden her pikselin uzaklığını çıkaran, nesneleri 3B uzayda takip eden ve kameranın kendi hareketini kestiren bir C++ hattı. Hedefleri baştan yazdım, gerçek KITTI verisinde ölçtüm; çoğu tutmadı ve rapor bunu açıkça söylüyor."
+summary: "İki kameradan her pikselin uzaklığını çıkaran, nesneleri 3B uzayda takip eden ve kameranın kendi hareketini kestiren bir C++ hattı. Hedefleri baştan yazıp KITTI üzerinde ölçtüm; çoğu tutmadı ve rapor bunu açıkça yazıyor."
 categories: [cv, sys]
 featured: true
-order: 2
+order: 1
 period: Eylül 2026
 year: 2026
 stack: [C++17, OpenCV, Eigen, ONNX Runtime, CUDA, ROS2 Humble, Docker, GoogleTest, GitHub Actions]
@@ -15,8 +15,8 @@ metrics:
 repo: https://github.com/l4NGEL/stereo-3d-mot
 diagram: stereo
 cover:
-  src: /images/stereo-3d-mot/demo.webp
-  alt: Soldan sağa sol kamera karesi, tahmini disparite, renklendirilmiş derinlik ve referans disparite
+  src: /images/stereo-3d-mot/takip.webp
+  alt: KITTI sekans 0016 üzerinde çoklu hedef takibi; kırmızı kutular raporlanan izler
 ---
 import Figure from '../../components/Figure.astro';
 import StereoPipeline from '../../diagrams/StereoPipeline.astro';

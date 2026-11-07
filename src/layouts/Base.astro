@@ -14,10 +14,11 @@ const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = image ? new URL(image, Astro.site).href : undefined;
 const onWork = path.startsWith('/projeler');
+const onWorkIndex = path === '/projeler';
 const onCerts = path.startsWith('/sertifikalar');
 ---
 <!doctype html>
-<html lang="tr">
+<html lang="tr" class:list={{ 'page-certs': onCerts, 'page-work': onWorkIndex }}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

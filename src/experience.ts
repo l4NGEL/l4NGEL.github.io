@@ -22,7 +22,7 @@ export const ROLES: Role[] = [
       'React web konsolu; ekibin bu depodaki 48 commit’inin 38’i',
       'Flutter mobil uygulamada cihaz üstünde yüz doğrulama ve canlılık tespiti (TensorFlow Lite, ONNX Runtime)',
       'Python servislerinin dağıtım için paketlenmesi, Kotlin ve Swift ile native entegrasyonlar',
-      '4 farklı dağıtım ortamı; yurt dışında bir PoC kurulumu',
+      '4 farklı dağıtım ortamı; PoC kurulumu için Malezya’da 3 hafta',
     ],
     stack: ['Flask', 'PostgreSQL', 'React', 'Flutter', 'TensorFlow Lite', 'ONNX Runtime', 'Kotlin', 'Swift'],
   },
@@ -31,7 +31,7 @@ export const ROLES: Role[] = [
     company: 'Papilon Savunma Teknolojileri',
     place: 'Ankara',
     when: 'Temmuz – Eylül 2025',
-    summary: 'BiYokla’nın Flutter istemcisini başlattım ve cihaz üstünde çalışan bir kimlik doğrulama uygulaması geliştirdim.',
+    summary: 'Cihaz üstünde çalışan bir kimlik doğrulama uygulaması geliştirdim.',
     points: [
       'FaceApp: 1:N ve 1:1 yüz eşleştirme, internet olmadan çalışabilme',
       'NFC ve MRZ ile kimlik belgesi okuma',

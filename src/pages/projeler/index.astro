@@ -15,15 +15,17 @@ const open = projects.filter((p) => p.data.repo).length;
   description="Bilgisayarlı görü, yapay zekâ, savunma ve sistem yazılımı, full-stack, güvenlik ve akademik projeler."
   image="/images/autotrack/demo.webp"
 >
-  <main class="wrap">
+  <main class="wrap projects-page">
     <header class="p-top">
       <p class="crumb"><a href="/">← Ana sayfa</a></p>
-      <h1 class="p-title">Projeler</h1>
       <div class="p-lead">
-        <p class="lead">
-          Kişisel, akademik ve ekip projelerim. Her birinin sayfasında ne yaptığımı, nasıl ölçtüğümü ve neyin
-          beklediğim gibi çıkmadığını anlattım.
-        </p>
+        <div class="proj-copy">
+          <h1 class="p-title">Projeler</h1>
+          <p class="lead">
+            Kişisel, akademik ve ekip projelerim. Her birinin sayfasında ne yaptığımı, nasıl ölçtüğümü ve neyin
+            beklediğim gibi çıkmadığını anlattım.
+          </p>
+        </div>
         <dl class="stat-row">
           <div><dt>Proje</dt><dd>{projects.length}</dd></div>
           <div><dt>Açık kaynak</dt><dd>{open}</dd></div>
@@ -40,7 +42,7 @@ const open = projects.filter((p) => p.data.repo).length;
         return (
           <a class="pcard" href={`/projeler/${p.id}`}>
             <div class="pcard-media">
-              {Diagram ? <div class="pcard-dg"><Diagram /></div> : d.cover ? <img src={d.cover.src} alt="" loading="lazy" decoding="async" /> : null}
+              {d.cover ? <img src={d.cover.src} alt="" loading="lazy" decoding="async" /> : Diagram ? <div class="pcard-dg"><Diagram /></div> : null}
             </div>
             <div class="pcard-body">
               <p class="pcard-cats">{d.categories.map((c) => CATEGORIES[c]).join(' · ')}</p>

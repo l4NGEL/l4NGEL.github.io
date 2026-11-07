@@ -1,0 +1,65 @@
+---
+title: "Polip Tespiti"
+tagline: "Kolonoskopi karesinde polip; model başka bir merkezin verisinde ne kadar kalıyor."
+summary: "Asıl soru modelin iç test skoru değil. U-Net ve YOLOv8s-seg Kvasir-SEG ile eğitildi, CVC-ClinicDB ile hiç görmeden sınandı. İki model de dış teste düşünce aynı yere indi. Tıbbi cihaz değildir; araştırma ve öğrenme amaçlıdır."
+categories: [cv, ai]
+order: 10
+period: Ekim 2026
+year: 2026
+repo: "https://github.com/l4NGEL/polip-tespit"
+stack: [Python, PyTorch, U-Net, YOLOv8, CUDA]
+metrics:
+  - { value: '0,851', label: 'dış test Dice, iç testte 0,919 olan U-Net' }
+  - { value: '0,33', label: 'polipsiz görüntüde U-Net özgüllüğü' }
+---
+
+## Protokol
+
+Eşikler ve model seçimi testten önce sabitlendi, sonra değiştirilmedi. Model, 60 epoch içinde Kvasir doğrulama Dice'ı en yüksek olan epoch. U-Net eşiği 0,5. YOLO güveni 0,25, Ultralytics varsayılanı. CVC-ClinicDB ve polipsiz görüntüler eğitime, seçime ve eşiğe hiç girmedi. Metrikler özgün çözünürlükte; tahmin 352×352'den geri büyütülür. Köşeli aralıklar %95: Dice için bootstrap, oranlar için Wilson.
+
+| Veri | Kullanım | Boyut |
+|---|---|---|
+| Kvasir-SEG | 800 eğitim, 100 doğrulama, 100 iç test | 1000 görüntü, 333 çözünürlük |
+| CVC-ClinicDB | yalnız dış test | 612 kare, 29 video, 384×288 |
+| Kvasir v2, normal çekum | yalnız özgüllük | 100 polipsiz görüntü |
+
+Bölme sabit tohumla bir kez üretildi. Kvasir'de polip görüntünün medyan %11,4'ünü kaplıyor, CVC'de %6,8'ini.
+
+## Sonuç
+
+| | U-Net ResNet34 | YOLOv8s-seg |
+|---|---|---|
+| Kvasir iç test, Dice | 0,919 [0,894, 0,942] | 0,898 [0,871, 0,925] |
+| IoU | 0,868 | 0,840 |
+| CVC dış test, Dice | 0,851 [0,835, 0,866] | 0,848 [0,831, 0,864] |
+| Lezyon duyarlılığı / kesinlik | 0,847 / 0,819 | 0,864 / 0,877 |
+| Görüntü başına yanlış pozitif | 0,20 | 0,13 |
+| Polipsiz 100 görüntü, özgüllük | 0,33 [0,25, 0,43] | 0,74 [0,65, 0,82] |
+| ROC-AUC, CVC'ye karşı polipsiz | 0,927 | 0,956 |
+
+İç testte U-Net önde görünüyor. Aralıklar örtüşüyor; 100 görüntüde bu fark kesin değil. Dış testte fark kayboluyor. İç testteki üstünlük taşınmıyor.
+
+Kvasir-SEG'deki görüntülerin hepsinde polip var. Modeller "burada polip yok"u öğrenmedi. U-Net, polipsiz görüntülerin yaklaşık üçte ikisinde yanlış alarm veriyor: kabarık kıvrım, yuvarlak çıkıntı, kalıntı. ROC-AUC 0,93–0,96 olduğu için ayrım skorda var; eşik polipsiz görüntüye göre ayarlı değil. O eşiği bu 100 görüntüye göre kaydırmak test verisine uydurmak olurdu, yapmadım.
+
+## Hata nerede
+
+CVC'de lezyon duyarlılığı, kutu IoU en az 0,5:
+
+| Polip alanı | n | U-Net | YOLOv8s-seg |
+|---|---|---|---|
+| %1'den küçük | 35 | 0,46 | 0,57 |
+| %1–3 | 124 | 0,84 | 0,85 |
+| %3–10 | 279 | 0,90 | 0,90 |
+| %10'dan büyük | 208 | 0,84 | 0,87 |
+
+Küçük polipler belirgin kötü. Kvasir iç testinde bu boyutta polip yoktu; zayıflık iç testte görünmüyordu. Büyük poliplerdeki düşüşün neredeyse tamamı, polipin yalnız bir kenarının işaretlenmesi. U-Net'in kaçırdığı 33 büyük polipten 29'unda tahmin polipe değiyor.
+
+Dış testte U-Net'in kaçırdığı 99 polipten 65'i bulunmuş ama sınırı yanlış; 34'ü hiç yok. YOLO'da bu 43'e 45.
+
+Parlamanın kaçırmaya sebep olduğu hipotezini ölçtüm. Kaçırılan ve yakalanan poliplerde polip içi parlama oranı ikisinde de medyan yaklaşık 0. Veri bunu desteklemiyor.
+
+## Hız ve sınır
+
+RTX 2080, 352×352, tek görüntü. PyTorch FP32 medyan 17,1 ms (58 FPS). FP16 11,9 ms (84 FPS). ONNX Runtime CPU 94,5 ms. 50 dış test karesinde ONNX ile PyTorch arasındaki en büyük olasılık farkı 1,9×10⁻⁵, maske Dice'ı 1,0. CUDA ve TensorRT sağlayıcılarını ölçemedim: kurulu `onnxruntime-gpu` CUDA 12 istiyor, bu makinedeki PyTorch CUDA 13 ile geliyor. Betik, sağlayıcı yüklenmeyip CPU'ya düşerse bunu ölçüm diye yazmaz.
+
+Özgüllük 100 görüntü; aralık geniş ve bu görüntüler Kvasir ile aynı merkezden. CVC'nin 612 karesi 29 videodan, ardışık kareler bağımsız değil; güven aralıkları olduğundan dar görünebilir. Tek tohum, tek eğitim. Sıradaki adım belli: eğitime polipsiz görüntü eklemek ve eşiği ayrı bir negatif kümede seçmek. Klinik karar için bu sayılar yeterli değil.

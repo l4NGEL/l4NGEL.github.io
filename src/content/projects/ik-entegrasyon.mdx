@@ -1,0 +1,42 @@
+---
+title: "İK Entegrasyonu"
+tagline: "Personel LDAP'tan, bordro SOAP ile; boş şifreyle bind kapıda kesiliyor."
+summary: "Küçük bir insan kaynakları paneli. Kimlik dizinden geliyor, bordro sahte bir ERP'den SOAP ile çekiliyor, izin talepleri MySQL'de duruyor ve aynı kurallar dışarıya SOAP olarak açılıyor. PHP, framework yok."
+categories: [web]
+order: 28
+period: Ekim 2026
+year: 2026
+stack: [PHP, LDAP, SOAP, MySQL, Docker]
+---
+
+## Akış
+
+Personelin kaynağı dizin. Uygulama servis hesabıyla kullanıcı DN'ini bulur, sonra kullanıcının kendi şifresiyle ikinci bir bind yapar. Grup üyeliğinden rol çıkar. Panelde giriş, izin talebi, onay ve senkron var.
+
+```
+LDAP / AD                         ERP (bordro, sahte SOAP)
+    │                                      │
+    ├─ LdapSync: personeli upsert et       ├─ ErpSync: masraf merkezi, kademe
+    │                                      │
+    └──────────── PHP paneli ──────────────┘
+                  izin MySQL'de
+                  İK SOAP: GetEmployee, ListEmployees, SubmitLeaveRequest
+```
+
+Dışarıya açılan servis document/literal. WSDL `?wsdl` ile alınır. İş kuralı ihlali `Client` fault döner; istemci bunu yakalayabilir.
+
+## Kapıda kesilenler
+
+LDAP'ta boş şifreyle bind, kimlik doğrulanmamış bind olarak başarılı döner. Kontrol edilmezse herkes her hesaba girer. Boş şifre kapıda reddediliyor.
+
+Kullanıcı adı filtreye `ldap_escape` ile girer. Testte `ayilm*` girişi reddediliyor; yıldız, dizindeki herkesi eşleştirmesin diye.
+
+Dizin araması boş dönerse senkron kimseyi pasife almıyor. Yanlış filtre veya yetki, bütün kadroyu işten çıkarmasın. ERP'de olup dizinde olmayan sicil eklenmiyor, `sync_log`'a yazılıyor. Bordro bilgi ekler, kişi yaratmaz.
+
+## Active Directory
+
+Kod OpenLDAP'a kilitli değil. AD için URI, `sAMAccountName` ve kişi filtresi ortam değişkeni. Yönlendirmeler kapalı: AD'de kök DN araması bu olmadan takılır.
+
+## Kapsam dışı
+
+Resmi tatiller iş günü hesabına dahil değil. SOAP'ta WS-Security veya Basic kimlik doğrulama yok. LDAP sayfalama yok; AD varsayılan olarak 1000 kayıtta keser. Geliştirme şifreleri repoda duruyor, bu bir üretim yapılandırması değil.

@@ -1,0 +1,37 @@
+---
+title: "YDS Rota"
+tagline: "YDS hazırlığı: aralıklı tekrar, deneme takibi ve zayıf bölüme daha çok süre."
+summary: "Kelime kartları SM-2 ile tekrarlanıyor, deneme sonuçları bölüme göre tutuluyor, günlük plan zayıf bölüme daha fazla süre veriyor. Çevrimdışı: kalıcılık bir arayüzün arkasında, durum ChangeNotifier'da."
+categories: [web]
+order: 29
+period: Ekim 2026
+year: 2026
+stack: [Flutter, Dart, Material 3]
+metrics:
+  - { value: '80', label: 'soru, 10 bölüm; yanlış doğruyu götürmez' }
+  - { value: '180 dk', label: 'deneme, günlük bütçeye sıkıştırılmaz' }
+---
+
+## Tekrar
+
+Kart cevabı dört nota iniyor: tekrar, zor, iyi, kolay. Bunlar SM-2'nin 0–5 kalite puanına 1, 3, 4 ve 5 olarak bağlanır. Başarısız cevapta tekrar sayısı sıfırlanır ve kart ertesi gün gelir. Başarılı cevapta aralık bir gün, altı gün, sonra önceki aralık çarpı kolaylık katsayısı olur. Kolaylık 1,3 ile 9,9 arasında tutulur.
+
+## Günlük plan
+
+Koç üç kural uygular.
+
+1. Vadesi gelen kartlar önce. Kart başına yaklaşık 30 saniye; bu blok 5 ile 30 dakika arasında kalır.
+2. Kalan süre, son denemelerde en çok puan kaybettiren bölümlere gider. Ağırlık, deneme başına kayıp puandır. Bloklar en az 15 dakika, en fazla üç tane.
+3. Alışkanlık tutarlılığı (yakıt) 0,4'ün altındaysa plan %30 kısalır. Yapılmayan uzun bir liste yerine, seriyi geri kazandıran kısa bir plan.
+
+Deneme 180 dakika sürdüğü için günlük dakikaya sığdırılmaz. Zamanı geldiyse ayrı bir öneri olarak görünür.
+
+YDS burada 80 soru ve 10 bölüm: kelime 6, dil bilgisi 10, cloze 10, cümle tamamlama 10, çeviri 6, okuma 20, diyalog 5, yakın anlam 4, paragraf tamamlama 4, anlam bozan cümle 5. Yanlış doğruyu götürmez; puan, doğru sayısı çarpı 1,25. Bölüm doğruluğu son üç denemenin ortalaması. Doğru oranı 0,4'ün altı şiddetli, 0,5'in altı orta türbülans.
+
+Sınav tarihi başlangıçtan sonra olmalı, günlük hedef pozitif, hedef puan 0 ile 100 arasında. Bu üçü rota nesnesinin kurucusunda reddedilir.
+
+## Arayüz
+
+Kelime, deneme, odak, alışkanlık ve rota ayrı ekranlar. İlerleme, kalkıştan sınav gününe bir uçuş yolu. Açık ve koyu tema, kendi Material 3 belirteçleri, metinler Türkçe. Durum `ChangeNotifier`'da; kalıcılık bir depo arayüzünün arkasında, ekranlar dosyayı doğrudan görmez.
+
+Tekrar takvimi, plan, alışkanlık serisi ve depo arayüzden ayrı test edilir. Mağazaya çıkmadı.

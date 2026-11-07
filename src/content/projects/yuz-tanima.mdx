@@ -1,9 +1,9 @@
 ---
 title: "Derin Öğrenme ile Yüz Tanıma"
-tagline: "Bitirme projesi: FaceNet tarzı gömme ağı, MTCNN hizalama ve triplet / center loss ile sıfırdan yüz tanıma."
-summary: "Lisans bitirme projem. Yüz tanımayı hazır bir modeli çağırarak değil, gömme ağını PyTorch ile sıfırdan tasarlayıp eğiterek çalıştım. Maske, gözlük ve poz değişimi gibi zorlayıcı koşullara dayanıklı olmasını hedefledim ve kamera üzerinden çalışan bir demo ile bitirdim."
+tagline: "Bitirme projesi: sıfırdan gömme ağı, MTCNN hizalama, triplet ve center loss."
+summary: "Lisans bitirme projem. Elliye yakın makalenin ardından yüz tanımayı hazır bir modeli çağırarak değil, PyTorch ile sıfırdan eğitilmiş bir gömme ağı olarak kurdum. Maske, gözlük ve poz değişimine dayanmasını hedefledim; kamerada çalışan bir demo ile kapattım."
 categories: [edu, cv, ai]
-order: 18
+order: 24
 period: "Bitirme projesi, 2025"
 year: 2025
 role: "Bitirme projesi, danışman Prof. Dr. Kemal Fidanboylu"
@@ -13,12 +13,23 @@ metrics:
   - { value: '10', label: 'kişi başına poz ve varyasyon' }
 repo: https://github.com/l4NGEL/face_recognition
 ---
+import Figure from '../../components/Figure.astro';
+import FacePipeline from '../../diagrams/FacePipeline.astro';
+import FaceAlign from '../../diagrams/FaceAlign.astro';
+import FaceArch from '../../diagrams/FaceArch.astro';
+import FaceTriplet from '../../diagrams/FaceTriplet.astro';
 
 ## Proje
 
 Bursa Uludağ Üniversitesi Bilgisayar Mühendisliği bölümünde, Prof. Dr. Kemal Fidanboylu danışmanlığında yaptığım bitirme projesi. Amaç, gömme (embedding) tabanlı yüz tanıma yaklaşımını baştan sona anlamak ve gerçek zamanlı çalışabilen bir sistem kurmaktı.
 
+Yöntemi seçmeden önce bu yazını taradım. FaceNet çizgisindeki ağlar, triplet ve center loss, yüz hizalama ve maske, gözlük, poz gibi bozucu koşullar üzerine elliye yakın makale okudum. Okuma, hazır bir tanıma modelini çağırmak yerine ağı sıfırdan kurmanın gerekçesini netleştirdi: yeni bir kişi için modeli yeniden eğitmemek, kayıpta zor örnekleri seçmek ve kapanmayı veri artırmayla taklit etmek buradan çıktı.
+
 Gömme tabanlı yaklaşımda model bir yüzü sınıflandırmıyor; onu bir vektöre çeviriyor. Aynı kişinin yüzleri bu uzayda birbirine yakın, farklı kişilerinki uzak düşecek şekilde eğitiliyor. Böylece sisteme yeni bir kişi eklemek için modeli yeniden eğitmek gerekmiyor, sadece o kişinin vektörünü kaydetmek yetiyor.
+
+<Figure n={1} caption="Sistem hattı. Mavi kutular sıfırdan eğitilen ağ ve kayıp. Alt sıra aynı ağı kamerada, galeriyle kullanıyor.">
+  <FacePipeline />
+</Figure>
 
 ## Veri
 
@@ -26,6 +37,10 @@ CelebA'dan türettiğim ve filtrelediğim bir alt küme: 1.800'ü kadın, 1.800'
 
 - **Ön işleme:** MTCNN ile yüz tespiti, kırpma ve hizalama; piksel değerlerinin `[-1, 1]` aralığına normalizasyonu
 - **Veri artırma:** yatay çevirme, ColorJitter, RandomAffine, RandomErasing. Sonuncusu, yüzün bir kısmının maske ya da gözlükle kapandığı durumları taklit etmek için
+
+<Figure n={2} caption="Hizalama ve artırma. Solda eğik ham yüz, ortada gözleri yataya çekilmiş kırpım, sağda çevirme, renk oynatma ve kapanma taklidi.">
+  <FaceAlign />
+</Figure>
 
 ## Model
 
@@ -39,7 +54,15 @@ CelebA'dan türettiğim ve filtrelediğim bir alt küme: 1.800'ü kadın, 1.800'
 | Optimizasyon | AdamW, CosineAnnealingLR |
 | Karşılaştırma | Öklid mesafesi ve kosinüs benzerliği |
 
+<Figure n={3} caption="Gömme ağı. Dört konvolüsyon bloğunun ardından ortalama havuzlama ve tam bağlantılı katman bir yüzü tek vektöre indiriyor.">
+  <FaceArch />
+</Figure>
+
 Triplet loss, bir yüzü aynı kişinin başka bir yüzüne yaklaştırıp farklı bir kişinin yüzünden uzaklaştırıyor. Rastgele seçilen üçlülerin çoğu model için fazla kolay olduğundan, zor örnekleri seçen (hard ve semi-hard negative mining) bir strateji kullandım. Center loss ise aynı kişinin vektörlerini kendi sınıf merkezine doğru çekerek kümeleri sıkılaştırıyor.
+
+<Figure n={4} caption="Gömme uzayı. A ile P aynı kişi ve yakın, N farklı kişi ve uzak. İçi boş nokta, center loss'un çektiği sınıf merkezi.">
+  <FaceTriplet />
+</Figure>
 
 ## Demo
 

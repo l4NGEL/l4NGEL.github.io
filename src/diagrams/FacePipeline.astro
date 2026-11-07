@@ -1,0 +1,60 @@
+<svg class="dg" viewBox="0 0 760 248" role="img" aria-label="Yüz tanıma hattı. Üst sıra eğitim: CelebA, MTCNN, artırma, gömme ağı ve kayıp. Alt sıra çalışma: kamera, aynı ağ, galeri ve karar.">
+  <defs>
+    <marker id="fr-a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="ah" d="M0 0L8 4L0 8z" /></marker>
+    <marker id="fr-k" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="ah key" d="M0 0L8 4L0 8z" /></marker>
+  </defs>
+
+  <text class="sm" x="12" y="18">eğitim</text>
+  <rect class="box" x="12" y="30" width="128" height="56" />
+  <text class="hd" x="76" y="54" text-anchor="middle">CelebA</text>
+  <text class="sm" x="76" y="72" text-anchor="middle">3.600 kişi</text>
+
+  <rect class="box" x="164" y="30" width="128" height="56" />
+  <text class="hd" x="228" y="54" text-anchor="middle">MTCNN</text>
+  <text class="sm" x="228" y="72" text-anchor="middle">tespit, hizalama</text>
+
+  <rect class="box" x="316" y="30" width="128" height="56" />
+  <text class="hd" x="380" y="54" text-anchor="middle">Artırma</text>
+  <text class="sm" x="380" y="72" text-anchor="middle">çevir, renk, sil</text>
+
+  <rect class="box key" x="468" y="30" width="140" height="56" />
+  <text class="hd" x="538" y="54" text-anchor="middle">Gömme ağı</text>
+  <text class="sm" x="538" y="72" text-anchor="middle">4 konv. blok</text>
+
+  <rect class="box key" x="632" y="30" width="116" height="56" />
+  <text class="hd" x="690" y="54" text-anchor="middle">Kayıp</text>
+  <text class="sm" x="690" y="72" text-anchor="middle">triplet, center</text>
+
+  <text class="sm" x="12" y="132">çalışma</text>
+  <rect class="box" x="12" y="144" width="128" height="56" />
+  <text class="hd" x="76" y="168" text-anchor="middle">Kamera</text>
+  <text class="sm" x="76" y="186" text-anchor="middle">canlı kare</text>
+
+  <rect class="box" x="164" y="144" width="128" height="56" />
+  <text class="hd" x="228" y="168" text-anchor="middle">MTCNN</text>
+  <text class="sm" x="228" y="186" text-anchor="middle">aynı hizalama</text>
+
+  <rect class="box key" x="316" y="144" width="140" height="56" />
+  <text class="hd" x="386" y="168" text-anchor="middle">Aynı ağ</text>
+  <text class="sm" x="386" y="186" text-anchor="middle">yeniden eğitim yok</text>
+
+  <rect class="box" x="480" y="144" width="128" height="56" />
+  <text class="hd" x="544" y="168" text-anchor="middle">Galeri</text>
+  <text class="sm" x="544" y="186" text-anchor="middle">kayıtlı vektörler</text>
+
+  <rect class="box" x="632" y="144" width="116" height="56" />
+  <text class="hd" x="690" y="168" text-anchor="middle">Karar</text>
+  <text class="sm" x="690" y="186" text-anchor="middle">Öklid, kosinüs</text>
+
+  <text class="sm" x="12" y="232">Yeni kişi galeriye bir vektör olarak yazılır. Eşik altındaki mesafe tanıma, üstü ret sayılır.</text>
+
+  <path class="ln" d="M140 58H162" marker-end="url(#fr-a)" />
+  <path class="ln" d="M292 58H314" marker-end="url(#fr-a)" />
+  <path class="ln key" d="M444 58H466" marker-end="url(#fr-k)" />
+  <path class="ln key" d="M608 58H630" marker-end="url(#fr-k)" />
+  <path class="ln" d="M140 172H162" marker-end="url(#fr-a)" />
+  <path class="ln" d="M292 172H314" marker-end="url(#fr-a)" />
+  <path class="ln key" d="M456 172H478" marker-end="url(#fr-k)" />
+  <path class="ln" d="M608 172H630" marker-end="url(#fr-a)" />
+  <path class="ln dash" d="M538 86V116H386V142" marker-end="url(#fr-a)" />
+</svg>

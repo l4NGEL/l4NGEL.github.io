@@ -6,9 +6,9 @@ categories: [edu, cv, ai]
 order: 30
 period: "Lisans, ekip projesi"
 year: 2025
-role: "İki kişilik ekip projesi"
-codeNote: "Paylaşılmıyor"
-stack: [rPPG, CHROM, POS, Sinyal işleme, Bilgisayarlı görü]
+role: "İki kişilik ekip projesi; depodaki Kroma uygulamasını ben yazdım"
+repo: https://github.com/l4NGEL/rppg
+stack: [JavaScript, MediaPipe, rPPG, CHROM, POS, Sinyal işleme, Bilgisayarlı görü]
 ---
 
 ## Fikir
@@ -29,6 +29,12 @@ Bunun için iki yerleşik yöntem kullandık:
 | **POS** (plane-orthogonal-to-skin) | Normalize edilmiş renk sinyalini, derinin kendi renk yönüne dik bir düzleme izdüşürüyor; ışık şiddetindeki değişim bu düzlemde büyük ölçüde kayboluyor, nabız kaynaklı değişim kalıyor |
 
 Elde edilen sinyal, insan nabzının bulunabileceği frekans aralığında filtrelenip frekans alanında en baskın tepe bulunarak dakikadaki atım sayısına çevriliyor.
+
+## Kroma
+
+Depodaki Kroma, bu yöntemi tarayıcıda çalıştıran uygulama. Web kamerasındaki yüzün alın ve yanaklarından her karede bir R, G, B üçlüsü çıkarıyor; CHROM ve POS bu iz üzerinde yan yana koşuyor. İki yöntemin sayısı birbirinden ayrışırsa ekran bunu söylüyor. İlk tahmin yaklaşık 6 saniyede geliyor, kararlı değer pencere dolunca oturuyor. Karanlıkta, parlamada ya da tek taraftan gelen ışıkta ölçüm duruyor ve uyarı çıkıyor.
+
+Kamera yalnız `localhost` üzerinde izin verdiği için sayfa yerel bir sunucuyla açılıyor. Yüz MediaPipe Face Landmarker ile bulunuyor; model ve yazı tipleri CDN'den iniyor, kamera görüntüsü hiçbir yere gönderilmiyor. Tıbbi cihaz değil; çıkan sayı yaklaşık bir nabız tahmini.
 
 ## Araştırma önerisi
 

@@ -22,14 +22,14 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --paper: #121418; --paper-2: #1a1d22; --ink: #e8e9eb; --ink-2: #b4b9c1; --ink-3: #8c929b;
-    --rule: #2e3238; --rule-soft: #23272c; --accent: #8db4e2; --accent-ink: #a8c6ea; --accent-soft: #1b2634;
+    --paper: #0c1420; --paper-2: #131e2e; --ink: #eef0f3; --ink-2: #b6bec9; --ink-3: #7e8a9b;
+    --rule: #26354a; --rule-soft: #1b283a; --accent: #8db4e2; --accent-ink: #a8c6ea; --accent-soft: #17253b;
     color-scheme: dark;
   }
 }
 :root[data-theme='dark'] {
-  --paper: #121418; --paper-2: #1a1d22; --ink: #e8e9eb; --ink-2: #b4b9c1; --ink-3: #8c929b;
-  --rule: #2e3238; --rule-soft: #23272c; --accent: #8db4e2; --accent-ink: #a8c6ea; --accent-soft: #1b2634;
+  --paper: #0c1420; --paper-2: #131e2e; --ink: #eef0f3; --ink-2: #b6bec9; --ink-3: #7e8a9b;
+  --rule: #26354a; --rule-soft: #1b283a; --accent: #8db4e2; --accent-ink: #a8c6ea; --accent-soft: #17253b;
   color-scheme: dark;
 }
 
@@ -352,7 +352,7 @@ html.js-motion .certs:not(.paged) .cert:nth-child(n + 9) { display: none; }
 .role-row .org { margin: 2px 0 0; color: var(--ink-3); font-size: 15px; }
 .role-row h3 { margin: 0; font: 600 24px/1.25 var(--serif); letter-spacing: -0.01em; }
 .role-row .sum { margin: 8px 0 0; color: var(--ink-2); max-width: 62ch; }
-.role-row ul { margin: 12px 0 0; padding-left: 20px; color: var(--ink); }
+.role-row ul { margin: 12px 0 0; padding-left: 20px; color: var(--ink-2); }
 .role-row li { margin: 5px 0; }
 .role-row li::marker { color: var(--ink-3); }
 .stack-line { margin: 12px 0 0; font-size: 14px; color: var(--ink-3); }

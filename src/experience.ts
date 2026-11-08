@@ -6,6 +6,8 @@ export interface Role {
   when: string;
   summary: string;
   points: string[];
+  /** Zaman çizelgesinde etiket olarak görünen öne çıkanlar; maddelerden türetilir. */
+  highlights?: string[];
   stack: string[];
 }
 
@@ -24,6 +26,7 @@ export const ROLES: Role[] = [
       'Python servislerinin dağıtım için paketlenmesi, Kotlin ve Swift ile native entegrasyonlar',
       '4 farklı dağıtım ortamı; PoC kurulumu için Malezya’da 3 hafta',
     ],
+    highlights: ['103 uç noktalı API', 'ekibin 48 commit’inin 38’i', '4 dağıtım ortamı', 'Malezya’da 3 hafta PoC'],
     stack: ['Flask', 'PostgreSQL', 'React', 'Flutter', 'TensorFlow Lite', 'ONNX Runtime', 'Kotlin', 'Swift'],
   },
   {
@@ -37,6 +40,7 @@ export const ROLES: Role[] = [
       'NFC ve MRZ ile kimlik belgesi okuma',
       'Uygulamanın kendi Flask API’si',
     ],
+    highlights: ['1:N ve 1:1 yüz eşleştirme', 'internetsiz çalışma', 'NFC + MRZ kimlik okuma'],
     stack: ['Flutter', 'Flask', 'NFC', 'MRZ', 'TensorFlow Lite'],
   },
 ];

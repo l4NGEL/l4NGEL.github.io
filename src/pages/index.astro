@@ -1,9 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import Figure from '../components/Figure.astro';
-import Metrics from '../components/Metrics.astro';
-import { DIAGRAMS } from '../diagrams';
 import { CATEGORIES, type Category } from '../categories';
 import { CERTIFICATES } from '../certificates';
 import { ROLES } from '../experience';
@@ -68,74 +65,66 @@ const recent =projects.filter((p) => !p.data.featured).sort((a, b) => b.data.yea
         <h2>Deneyim</h2>
         <span class="label">Şirket içi projeler; ekran görüntüleri talep üzerine</span>
       </div>
-      {ROLES.map((r) => (
-        <article class="role-row">
-          <div>
-            <p class="when">{r.when}</p>
-            <p class="org">{r.company} · {r.place}</p>
-          </div>
-          <div>
+      <ol class="tl">
+        {ROLES.map((r, i) => (
+          <li class:list={['tl-item', { now: i === 0 }]}>
+            <span class="tl-dot" aria-hidden="true"></span>
+            <p class="tl-when">{r.when}</p>
             <h3>{r.title}</h3>
+            <p class="tl-org">{r.company} · {r.place}</p>
             <p class="sum">{r.summary}</p>
-            <ul>{r.points.map((p) => <li>{p}</li>)}</ul>
+            {r.highlights && <ul class="tl-chips">{r.highlights.map((h) => <li>{h}</li>)}</ul>}
+            <ul class="tl-points">{r.points.map((pt) => <li>{pt}</li>)}</ul>
             <p class="stack-line">{r.stack.join(' · ')}</p>
-          </div>
-        </article>
-      ))}
+          </li>
+        ))}
+      </ol>
 
       <div class="shead">
         <h2>Seçili çalışmalar</h2>
         <span class="label">{featured.length} proje</span>
       </div>
-
-      {featured.map((p, i) => {
-        const d = p.data;
-        const Diagram = d.diagram ? DIAGRAMS[d.diagram as keyof typeof DIAGRAMS] : undefined;
-        return (
-          <article class:list={['work', { flip: i % 2 === 1 }]}>
-            <div class="work-text">
-              <span class="work-no">{d.categories.map((c) => CATEGORIES[c]).join(' · ')}</span>
-              <h3 style={`view-transition-name: p-${p.id}`}><a href={`/projeler/${p.id}`}>{d.title}</a></h3>
-              <p class="sum">{d.summary}</p>
-              <dl class="facts">
-                <dt>Dönem</dt><dd>{d.period}</dd>
-                <dt>Teknoloji</dt><dd>{d.stack.slice(0, 6).join(', ')}</dd>
-                <dt>Kod</dt><dd>{d.repo ? 'GitHub, açık' : 'Talep üzerine'}</dd>
-              </dl>
-              <a class="readmore" href={`/projeler/${p.id}`}>Projenin ayrıntıları →</a>
-            </div>
-            <div>
-              {Diagram ? (
-                <Figure caption={d.tagline}><Diagram /></Figure>
-              ) : d.cover ? (
-                <Figure src={d.cover.src} alt={d.cover.alt} caption={d.cover.alt} bare />
-              ) : null}
-              <Metrics items={d.metrics} />
-            </div>
-          </article>
-        );
-      })}
+      <div class="fgrid">
+        {featured.map((p) => {
+          const d = p.data;
+          return (
+            <a class="fcard" href={`/projeler/${p.id}`}>
+              {d.cover && <img class="fcard-img" src={d.cover.src} alt={d.cover.alt} loading="lazy" decoding="async" />}
+              <div class="fcard-body">
+                <span class="work-no">{d.categories.map((c) => CATEGORIES[c]).join(' · ')}</span>
+                <h3 style={`view-transition-name: p-${p.id}`}>{d.title}</h3>
+                <p class="fcard-sum">{d.tagline}</p>
+                <dl class="fcard-metrics">
+                  {d.metrics.slice(0, 2).map((m) => <div><dd>{m.value}</dd><dt>{m.label}</dt></div>)}
+                </dl>
+                <p class="fcard-foot">
+                  <span>{d.period} · {d.repo ? 'GitHub, açık' : 'kod talep üzerine'}</span>
+                  <span class="fcard-go" aria-hidden="true">→</span>
+                </p>
+              </div>
+            </a>
+          );
+        })}
+      </div>
 
       <div class="shead">
         <h2>Diğer projeler</h2>
         <a class="readmore" style="margin:0" href="/projeler">Tüm projeler ({projects.length}) →</a>
       </div>
-      <ol class="index">
-        {recent.map((p) => (
-          <li>
-            <a class="row" href={`/projeler/${p.id}`}>
-              <span class="n"></span>
-              <span class="t" style={`view-transition-name: p-${p.id}`}>{p.data.title}</span>
-              <span class="d">{p.data.tagline}</span>
-              <span class="m">
-                {p.data.status ? <span class="tag-status">{p.data.status}</span> : p.data.year}
-                {' · '}{p.data.repo ? 'açık kaynak' : 'özel repo'}
-              </span>
-              <span class="arrow" aria-hidden="true">→</span>
+      <div class="mgrid">
+        {recent.map((p) => {
+          const d = p.data;
+          const img = d.thumb ?? d.cover?.src;
+          return (
+            <a class="mcard" href={`/projeler/${p.id}`}>
+              {img ? <img class="mcard-img" src={img} alt="" loading="lazy" decoding="async" /> : <span class="mcard-img mcard-ph" aria-hidden="true">{d.stack[0]}</span>}
+              <span class="mcard-t" style={`view-transition-name: p-${p.id}`}>{d.title}</span>
+              <span class="mcard-d">{d.tagline}</span>
+              <span class="mcard-m">{d.status ? <span class="tag-status">{d.status}</span> : d.year} · {d.repo ? 'açık kaynak' : 'özel repo'}</span>
             </a>
-          </li>
-        ))}
-      </ol>
+          );
+        })}
+      </div>
       <p style="margin:22px 0 0"><a class="readmore" href="/projeler">Bütün projeleri alana göre filtreleyerek gör →</a></p>
 
       <div class="shead">

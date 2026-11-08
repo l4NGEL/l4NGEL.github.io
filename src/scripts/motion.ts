@@ -6,7 +6,7 @@ const root = document.documentElement;
 /* ---------- Kaydırınca beliren bloklar ---------- */
 const REVEAL = [
   '.shead', '.work', '.role-row', '.index > li', '.cert', '.cert-list > li', '.cv-list > li',
-  '.p-metrics', '.p-cover', '.toc', '.prose > *', '.certs', '.next', '.pcard',
+  '.p-metrics', '.p-cover', '.toc', '.prose > *', '.certs', '.next', '.pcard', '.tl-item', '.fcard', '.mcard',
 ].join(',');
 
 function reveal(el: Element) {

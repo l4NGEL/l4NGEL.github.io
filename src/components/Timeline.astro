@@ -1,0 +1,18 @@
+---
+// Deneyim zaman çizelgesi; ana sayfa ve Hakkımda aynı bileşeni kullanır.
+import { ROLES } from '../experience';
+---
+<ol class="tl">
+  {ROLES.map((r, i) => (
+    <li class:list={['tl-item', { now: i === 0 }]}>
+      <span class="tl-dot" aria-hidden="true"></span>
+      <p class="tl-when">{r.when}</p>
+      <h3>{r.title}</h3>
+      <p class="tl-org">{r.company} · {r.place}</p>
+      <p class="sum">{r.summary}</p>
+      {r.highlights && <ul class="tl-chips">{r.highlights.map((h) => <li>{h}</li>)}</ul>}
+      <ul class="tl-points">{r.points.map((pt) => <li>{pt}</li>)}</ul>
+      <p class="stack-line">{r.stack.join(' · ')}</p>
+    </li>
+  ))}
+</ol>

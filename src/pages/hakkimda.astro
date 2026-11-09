@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import { CERTIFICATES } from '../certificates';
-import { ROLES } from '../experience';
+import Timeline from '../components/Timeline.astro';
 
 const skills = [
   ['Diller', 'Python, C++17, C#, Java, TypeScript, Rust, Dart, SQL'],
@@ -30,20 +30,7 @@ const skills = [
     </header>
 
     <div class="shead"><h2>Deneyim</h2><span class="label">Ekran görüntüleri talep üzerine</span></div>
-    {ROLES.map((r) => (
-      <article class="role-row">
-        <div>
-          <p class="when">{r.when}</p>
-          <p class="org">{r.company} · {r.place}</p>
-        </div>
-        <div>
-          <h3>{r.title}</h3>
-          <p class="sum">{r.summary}</p>
-          <ul>{r.points.map((p) => <li>{p}</li>)}</ul>
-          <p class="stack-line">{r.stack.join(' · ')}</p>
-        </div>
-      </article>
-    ))}
+    <Timeline />
 
     <div class="shead"><h2>Eğitim</h2></div>
     <ul class="cv-list">
